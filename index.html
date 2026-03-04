@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITS4401 Mindmap Index</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #0a0e1a;
+    color: #e0e4ef;
+    min-height: 100vh;
+  }
+
+  .header {
+    text-align: center;
+    padding: 60px 20px 30px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4a90d9, transparent);
+  }
+
+  .header h1 {
+    font-size: 2em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4a90d9, #7ec8e3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+
+  .header .subtitle {
+    font-size: 0.9em;
+    color: #6a7a9b;
+    margin-top: 10px;
+    font-weight: 300;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 50px auto;
+    padding: 0 20px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    background: #111827;
+    border: 1px solid #1e2d45;
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card:hover {
+    border-color: #4a90d9;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(74, 144, 217, 0.15);
+  }
+
+  .card-icon {
+    font-size: 1.6em;
+  }
+
+  .card-title {
+    font-size: 1em;
+    font-weight: 500;
+    color: #c8d6ef;
+    font-family: 'JetBrains Mono', monospace;
+    word-break: break-all;
+  }
+
+  .card-label {
+    font-size: 0.75em;
+    color: #4a90d9;
+    background: rgba(74, 144, 217, 0.1);
+    border-radius: 4px;
+    padding: 2px 8px;
+    width: fit-content;
+  }
+
+  .status {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6a7a9b;
+    font-size: 0.9em;
+  }
+
+  .status.error {
+    color: #c0392b;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #1e2d45;
+    border-top-color: #4a90d9;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  footer {
+    text-align: center;
+    padding: 40px 20px;
+    color: #3a4a6b;
+    font-size: 0.75em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CITS4401 Mindmaps</h1>
+  <p class="subtitle">Software Requirements & Design</p>
+</div>
+
+<div class="container">
+  <div id="content">
+    <div class="status">
+      <div class="spinner"></div>
+      加载中…
+    </div>
+  </div>
+</div>
+
+<footer>自动从 GitHub 仓库读取文件列表</footer>
+
+<script>
+  const REPO = 'vneo-m/CITS4401-Mindmap';
+  const API  = `https://api.github.com/repos/${REPO}/contents/`;
+
+  function formatName(filename) {
+    return filename
+      .replace(/\.html$/i, '')
+      .replace(/_/g, ' ');
+  }
+
+  function guessLabel(filename) {
+    const m = filename.match(/lec(\d+[a-z]*)/i);
+    if (m) return `Lecture ${m[1].toUpperCase()}`;
+    return 'HTML';
+  }
+
+  async function load() {
+    const el = document.getElementById('content');
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+      const files = await res.json();
+
+      const htmlFiles = files.filter(f =>
+        f.type === 'file' &&
+        f.name.toLowerCase().endsWith('.html') &&
+        f.name.toLowerCase() !== 'index.html'
+      );
+
+      if (htmlFiles.length === 0) {
+        el.innerHTML = '<div class="status">暂无文件</div>';
+        return;
+      }
+
+      const cards = htmlFiles.map(f => `
+        <a class="card" href="${f.name}">
+          <div class="card-icon">🗺️</div>
+          <div class="card-title">${formatName(f.name)}</div>
+          <div class="card-label">${guessLabel(f.name)}</div>
+        </a>
+      `).join('');
+
+      el.innerHTML = `<div class="grid">${cards}</div>`;
+    } catch (err) {
+      el.innerHTML = `<div class="status error">加载失败：${err.message}<br><small>请确认网络连接或仓库是否为公开状态</small></div>`;
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

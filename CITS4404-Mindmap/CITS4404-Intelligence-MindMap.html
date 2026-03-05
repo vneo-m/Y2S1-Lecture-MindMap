@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITS4404 - Part 1: Intelligence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #f0f4f8;
+    color: #1e2a3a;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4a90d9, transparent);
+  }
+
+  .header h1 {
+    font-size: 1.6em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2270b8, #1a96c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+
+  .header .subtitle {
+    font-size: 0.85em;
+    color: #5a6a80;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px 20px 8px;
+    font-size: 0.75em;
+    color: #5a6a80;
+    flex-wrap: wrap;
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  .node {
+    margin: 6px 0;
+    position: relative;
+  }
+
+  .node-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+  }
+
+  .node-header:hover {
+    background: rgba(74, 144, 217, 0.09);
+  }
+
+  .node-toggle {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    margin-top: 2px;
+    transition: all 0.2s ease;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  .node-text {
+    flex: 1;
+    line-height: 1.6;
+    font-size: 0.9em;
+  }
+
+  .node-children {
+    margin-left: 26px;
+    border-left: 1px solid rgba(74, 144, 217, 0.22);
+    padding-left: 10px;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+  }
+
+  .node-children.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .level-0 > .node-header {
+    background: linear-gradient(135deg, rgba(74, 144, 217, 0.12), rgba(126, 200, 227, 0.06));
+    border: 1px solid rgba(74, 144, 217, 0.28);
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+
+  .level-0 > .node-header .node-text {
+    font-weight: 700;
+    font-size: 1.05em;
+    color: #111111;
+  }
+
+  .level-0 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.2);
+    color: #1a6fa0;
+  }
+
+  .level-1 > .node-header .node-text {
+    font-weight: 500;
+    color: #222222;
+  }
+
+  .level-1 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.12);
+    color: #3a6aa0;
+  }
+
+  .level-2 > .node-header .node-text {
+    color: #333333;
+    font-weight: 400;
+  }
+
+  .level-2 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.08);
+    color: #5a8ab8;
+  }
+
+  .level-3 > .node-header .node-text {
+    color: #555555;
+    font-weight: 300;
+    font-size: 0.85em;
+  }
+
+  .level-3 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.05);
+    color: #4a7a9b;
+  }
+
+  .leaf > .node-header .node-toggle {
+    background: none;
+    color: #aaaaaa;
+    font-size: 6px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 0.72em;
+    font-weight: 500;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-concept { background: rgba(100, 60, 190, 0.09); color: #5030a0; }
+  .tag-key { background: rgba(180, 90, 0, 0.09); color: #a05010; }
+  .tag-person { background: rgba(0, 140, 90, 0.09); color: #007850; }
+  .tag-think { background: rgba(160, 110, 0, 0.09); color: #806000; }
+  .tag-quote { background: rgba(180, 30, 30, 0.09); color: #a02020; }
+  .tag-hist { background: rgba(50, 100, 180, 0.09); color: #2050a0; }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 0 4px;
+  }
+
+  .ctrl-btn {
+    padding: 6px 16px;
+    border: 1px solid rgba(74, 144, 217, 0.3);
+    background: rgba(74, 144, 217, 0.08);
+    color: #2270b8;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78em;
+    font-family: 'Noto Sans SC', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .ctrl-btn:hover {
+    background: rgba(74, 144, 217, 0.14);
+    border-color: rgba(74, 144, 217, 0.4);
+  }
+
+  strong { color: #111111; font-weight: 500; }
+  em { font-style: normal; color: #0a7aaa; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Part 1: Intelligence — 什么是智能？</h1>
+  <div class="subtitle">CITS4404 AI and Adaptive Systems — 思维导图 | © Siwen Luo, UWA</div>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#b89aff"></span>核心概念</span>
+  <span><span class="dot" style="background:#ffaa64"></span>重点</span>
+  <span><span class="dot" style="background:#64dcb4"></span>人物</span>
+  <span><span class="dot" style="background:#ffd64a"></span>思考题</span>
+  <span><span class="dot" style="background:#ff8a8a"></span>引用</span>
+  <span><span class="dot" style="background:#8ab4f0"></span>历史</span>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="toggleAll(true)">全部展开</button>
+  <button class="ctrl-btn" onclick="toggleAll(false)">全部折叠</button>
+  <button class="ctrl-btn" onclick="toggleAll(false); expandLevel(0); expandLevel(1);">展开两级</button>
+</div>
+
+<div class="container" id="tree"></div>
+
+<script>
+const data = {
+  text: "CITS4404 AI and Adaptive Systems — Part 1: Intelligence",
+  children: [
+    {
+      text: "一、什么是 AI？—— ChatGPT 的回答 (What is AI?)",
+      children: [
+        { text: "<strong>ChatGPT 的定义</strong>：AI 是对人类智能过程的模拟，包括学习、推理和自我纠正 <span class='tag tag-concept'>核心概念</span>" },
+        { text: "讲师评分：<strong>6/10</strong>——存在多处问题 <span class='tag tag-key'>重点</span>", children: [
+          { text: "\"模拟人类智能\" (simulation of human intelligence) → 是否<em>必要</em>？AI 一定要模拟人类吗？" },
+          { text: "\"学习、推理、自我纠正\" → 这些算是<em>适应 (adaptation)</em> 吗？" },
+          { text: "列举的应用领域（医疗、金融、交通等）→ 这是<em>用例</em>，不由\"智能\"本身决定" },
+          { text: "\"做出预测或自主决策\" → 这是<em>行为表现</em>，而非智能的定义" },
+        ]},
+      ]
+    },
+    {
+      text: "二、AI 的四象限框架 (Four Quadrants of AI)",
+      children: [
+        { text: "出处：Russell & Norvig,《Artificial Intelligence: A Modern Approach》<span class='tag tag-key'>重点</span>" },
+        { text: "两个维度：<strong>思考 (Thinking) vs 行动 (Acting)</strong> × <strong>像人类 (Humanly) vs 理性 (Rationally)</strong> <span class='tag tag-concept'>核心概念</span>" },
+        { text: "四个象限 <span class='tag tag-key'>重点</span>", children: [
+          { text: "<strong>像人类一样思考</strong>：自动化人类思维活动（决策、问题求解、学习）—— Bellman, 1978" },
+          { text: "<strong>理性地思考</strong>：通过计算模型研究心智能力 —— Charniak & McDermott, 1985" },
+          { text: "<strong>像人类一样行动</strong>：让计算机做人类目前更擅长的事 —— Rich & Knight, 1991" },
+          { text: "<strong>理性地行动</strong>：关注人工制品中的智能行为 —— Nilsson, 1998" },
+        ]},
+      ]
+    },
+    {
+      text: "三、AI 简史 (A Short History of AI)",
+      children: [
+        { text: "计算机历史博物馆 (Computer History Museum)：\"Revolution: The First 2000 Years of Computing\" <span class='tag tag-hist'>历史</span>" },
+        { text: "<strong>图灵测试 (The Turing Test)</strong> <span class='tag tag-concept'>核心概念</span><span class='tag tag-key'>重点</span>", children: [
+          { text: "0:50 — \"今天，智能机器无处不在\"——但它们真的<em>智能</em>吗？" },
+          { text: "机器在\"模拟人类感官和脑力\" → 这是<em>表现性测试 (performative tests)</em>" },
+          { text: "1:35 — Alan Turing 与图灵测试：最著名的智能表现性测试 <span class='tag tag-person'>人物</span>" },
+          { text: "其他表现性测试：下棋、翻译、驾驶" },
+          { text: "思考：ChatGPT 及其后继者能否通过图灵测试（至少在对话层面）？ <span class='tag tag-think'>思考题</span>" },
+        ]},
+        { text: "<strong>符号 AI (Symbolic AI)</strong>：Simon & Newell <span class='tag tag-person'>人物</span><span class='tag tag-hist'>历史</span>", children: [
+          { text: "2:10 — Simon (社会科学家，诺贝尔经济学奖)：\"我们理解了物质系统如何具有心智属性\" <span class='tag tag-quote'>引用</span>" },
+          { text: "创造了能进行<em>逻辑思考</em>的机器（逻辑理论家 Logical Theorist）" },
+          { text: "使用<em>符号系统</em>——据说是区分人类与动物的特征之一 → 符号 AI" },
+          { text: "这是否是比 LLM 更\"真实\"的智能版本？ <span class='tag tag-think'>思考题</span>" },
+          { text: "Simon 更大胆的主张：\"我们发明了能非数值思考的计算机程序，从而解决了古老的心身问题\" <span class='tag tag-quote'>引用</span>", children: [
+            { text: "心身问题 (Mind-Body Problem)：源自 17 世纪哲学家笛卡尔 (René Descartes)" },
+          ]},
+        ]},
+        { text: "<strong>\"人工智能\"一词的诞生</strong> <span class='tag tag-hist'>历史</span>", children: [
+          { text: "2:40 — 1956 年达特茅斯会议 (Dartmouth)：\"Artificial Intelligence\" 一词正式诞生" },
+          { text: "3:30 — 新的基于逻辑的编程语言和机器（如 Lisp 机器）" },
+          { text: "类比当今：Nvidia 市值曾达到 $3.41 万亿——硬件热潮似曾相识" },
+        ]},
+        { text: "<strong>大胆的预言 (Bold Predictions)</strong> <span class='tag tag-hist'>历史</span>", children: [
+          { text: "4:00 — Marvin Minsky, 1967：\"一代人之内……创建人工智能的问题将基本解决\" <span class='tag tag-quote'>引用</span><span class='tag tag-person'>人物</span>" },
+          { text: "5:30 — John McCarthy, 2006：\"1956 年的研讨会没有达到我的期望，主要原因是 AI 比我们想象的更难\" <span class='tag tag-quote'>引用</span><span class='tag tag-person'>人物</span>" },
+        ]},
+        { text: "<strong>专家系统 (Expert Systems)</strong> <span class='tag tag-hist'>历史</span>", children: [
+          { text: "5:30 — 据称为公司节省了数百万" },
+          { text: "曾预言将永远改变白领工作方式（听着耳熟？）" },
+          { text: "6:10 — <strong>Cyc 项目</strong>：最宏大却未成功的 AI 项目？是否已被 LLM 淘汰？" },
+        ]},
+        { text: "<strong>不确定性与不完备性 (Uncertainty/Incompleteness)</strong> <span class='tag tag-concept'>核心概念</span>", children: [
+          { text: "6:30 — 智能编程重新聚焦：处理<em>混乱不确定的现实世界</em>中的概率问题" },
+          { text: "教计算机更好地从<em>经验中学习</em> → 这正是本课程的核心内容！" },
+        ]},
+      ]
+    },
+    {
+      text: "四、什么是智能？—— 各方观点 (What is Intelligence?)",
+      children: [
+        { text: "6:50 — \"今天逻辑、知识和学习深深嵌入机器中\" → <em>真的是这样吗？</em> <span class='tag tag-think'>思考题</span>" },
+        { text: "7:05 — Mayer (Google) <span class='tag tag-person'>人物</span>", children: [
+          { text: "\"过去 AI 全是关于决策树的\" → 真的吗？这是对历史的过度简化" },
+          { text: "\"现在可以用蛮力编程。有了蛮力计算和大量数据，就能让事物<em>看起来</em>智能\" <span class='tag tag-quote'>引用</span>" },
+          { text: "注意用词：\"appear\" (看起来) → 一种 Google 式的世界观" },
+        ]},
+        { text: "<strong>AI 领域大咖的观点</strong> <span class='tag tag-key'>重点</span>", children: [
+          { text: "7:35 — <strong>Koller</strong>：\"在某些任务上更好，在另一些上不如人类，但这并不使它不智能，只是使它不像人类\" <span class='tag tag-quote'>引用</span><span class='tag tag-person'>人物</span>" },
+          { text: "7:40 — <strong>McCarthy</strong>：\"我们将智能与完成特定事物的能力联系起来，不论执行者是人类、火星人还是机械装置\" → 表现性定义 <span class='tag tag-quote'>引用</span><span class='tag tag-person'>人物</span>" },
+          { text: "8:00 — <strong>Nilsson</strong>：\"最终它们确实会达到人类水平的智能\" <span class='tag tag-quote'>引用</span><span class='tag tag-person'>人物</span>" },
+          { text: "8:20 — <strong>Feigenbaum</strong>：\"我们称之为 AI 的东西——计算机做智能的事情——是计算机科学的天命\" <span class='tag tag-quote'>引用</span><span class='tag tag-person'>人物</span>" },
+        ]},
+      ]
+    },
+    {
+      text: "五、LLM/GenAI 是真正的智能吗？(Are LLMs Intelligent?)",
+      children: [
+        { text: "UWA 都有 AI 使用政策了，所以 AI 确实存在吧？" },
+        { text: "LLM 无疑令人印象深刻，但它们<em>智能</em>吗？ <span class='tag tag-think'>思考题</span>" },
+        { text: "ScienceAlert 观点 (2025.2.23)：LLM 与手机预测输入的共同点，比与人脑产生知识的原理更多 <span class='tag tag-quote'>引用</span>", children: [
+          { text: "这公平吗？预测输入本身算不算智能？ <span class='tag tag-think'>思考题</span>" },
+        ]},
+        { text: "<strong>内在一致性 (Internal Consistency)</strong> 可能是智能的一个特征 <span class='tag tag-concept'>核心概念</span>", children: [
+          { text: "测试：CNN (卷积神经网络) 真的用了卷积 (convolution) 吗？" },
+          { text: "Gemini 先说\"是的，绝对使用卷积\"" },
+          { text: "被追问后改口：\"实际上用的是互相关 (cross-correlation)，不是卷积\" → 内在不一致" },
+        ]},
+        { text: "<strong>计算量的指数增长</strong> <span class='tag tag-key'>重点</span>", children: [
+          { text: "从 Perceptron Mark I 到 GPT-4/Gemini，训练计算量（FLOP）呈<em>对数</em>级增长" },
+          { text: "深度学习时代：训练计算量每 6 个月翻倍（此前为 21.6 个月）" },
+          { text: "思考：更多猴子 = 更多智能？ <span class='tag tag-think'>思考题</span>", children: [
+            { text: "如果训练猴子执行中间任务 (filters/层)？" },
+            { text: "如果选择性地繁殖猴子 (selective breeding/优化)？" },
+          ]},
+          { text: "出处：Sastry et al, \"Computing Power and the Governance of AI\", Feb 2024" },
+        ]},
+        { text: "<strong>NSW 首席科学家的警告</strong> (2025.2.25) <span class='tag tag-person'>人物</span>", children: [
+          { text: "Prof. Hugh Durrant-White：生成式 AI 的狂热转移了人们对几十年来非 LLM 的 AI 研究的关注" },
+          { text: "\"AI 领域中有大量非 LLM 的出色工作正在对研究和教学产生深远影响\"" },
+          { text: "预言：\"到今年年底，LLM 将触及瓶颈，人们会认清它们擅长和不擅长什么\" <span class='tag tag-quote'>引用</span>" },
+        ]},
+      ]
+    },
+    {
+      text: "六、AGI 与智能的层级 (AGI Levels)",
+      children: [
+        { text: "大科技公司对\"AI\"一词的占用是否意味着需要新术语？ <span class='tag tag-think'>思考题</span>" },
+        { text: "<strong>AGI 层级框架</strong> —— Morris, Sohl-Dickstein 等人, 2024 <span class='tag tag-concept'>核心概念</span><span class='tag tag-key'>重点</span>", children: [
+          { text: "两个维度：<strong>性能 (Performance)</strong> × <strong>通用性 (Generality)</strong>：窄域 (Narrow) vs 通用 (General)" },
+          { text: "<strong>Level 0 — 无 AI</strong>：计算器、编译器 (窄域) | 人在回路中的计算如 Amazon Mechanical Turk (通用)" },
+          { text: "<strong>Level 1 — 初现 (Emerging)</strong>：等于或略优于非专业人类", children: [
+            { text: "窄域：GOFAI、SHRDLU 等早期系统" },
+            { text: "通用（初现 AGI）：ChatGPT、Bard、Llama 2、Gemini 等" },
+          ]},
+          { text: "<strong>Level 2 — 胜任 (Competent)</strong>：至少达到熟练成人的第 50 百分位", children: [
+            { text: "窄域：毒性检测器、Siri/Alexa/Google Assistant、Watson" },
+            { text: "通用（胜任 AGI）：<em>尚未实现</em>" },
+          ]},
+          { text: "<strong>Level 3 — 专家 (Expert)</strong>：至少达到第 90 百分位", children: [
+            { text: "窄域：Grammarly、Imagen、DALL-E 2" },
+            { text: "通用（专家 AGI）：<em>尚未实现</em>" },
+          ]},
+          { text: "<strong>Level 4 — 大师 (Virtuoso)</strong>：至少达到第 99 百分位", children: [
+            { text: "窄域：Deep Blue、AlphaGo" },
+            { text: "通用（大师 AGI）：<em>尚未实现</em>" },
+          ]},
+          { text: "<strong>Level 5 — 超人类 (Superhuman)</strong>：超越 100% 人类", children: [
+            { text: "窄域：AlphaFold、AlphaZero、StockFish" },
+            { text: "通用（人工超级智能 ASI）：<em>尚未实现</em>" },
+          ]},
+        ]},
+      ]
+    },
+    {
+      text: "七、用人类认知测试衡量 AI (Human Cognitive Tests for AI)",
+      children: [
+        { text: "<strong>蒙特利尔认知评估 (MoCA)</strong> 测试 LLM <span class='tag tag-concept'>核心概念</span>", children: [
+          { text: "来源：Dayan, Uliel & Koplewitz, BMJ 2024" },
+          { text: "ChatGPT 4：得分最高（约 26 分）" },
+          { text: "ChatGPT 4o：略低于 ChatGPT 4" },
+          { text: "Claude：中等水平（约 22-24 分）" },
+          { text: "Gemini 1：得分较低（约 14-16 分）" },
+          { text: "Gemini 1.5：得分最低（约 12-16 分）" },
+          { text: "MCI (轻度认知障碍) 阈值：约 26 分 → 大多数 LLM 未能超过！" },
+        ]},
+        { text: "这说明什么？用人类认知标准衡量 AI 的局限性 <span class='tag tag-think'>思考题</span>" },
+      ]
+    },
+    {
+      text: "八、哲学之辩仍在继续 (The Philosophical Debate)",
+      children: [
+        { text: "<strong>人类中心主义 (Anthropocentrism)</strong>：以人类为中心看待智能 <span class='tag tag-concept'>核心概念</span>" },
+        { text: "Rob Boddice (2011)：核心问题围绕\"非人类\"——无论是动物、生态系统、神灵还是机器" },
+        { text: "智能是否必须与\"像人类\"有关？ <span class='tag tag-think'>思考题</span>" },
+      ]
+    },
+    {
+      text: "九、本课程的立场：AI 与自适应系统 (AI & Adaptive Systems)",
+      children: [
+        { text: "研究人类智能如何被人工实现——这个问题本身很迷人" },
+        { text: "但对许多人来说，目标始终是让计算机<strong>做更多的事</strong> <span class='tag tag-key'>重点</span>", children: [
+          { text: "有用的 (useful)" },
+          { text: "超越现有能力的 (beyond existing capabilities)" },
+          { text: "非常酷的 (really cool!)" },
+        ]},
+        { text: "这可以被看作一种<strong>\"工程\"视角</strong> → 本课程主要采用这一视角 <span class='tag tag-key'>重点</span>" },
+        { text: "为什么叫\"<em>自适应系统</em> (Adaptive Systems)\"？—— 待后续讲解" },
+      ]
+    },
+    {
+      text: "十、核心思考题汇总 (Questions to Think About)",
+      children: [
+        { text: "展现智能意味着什么？ <span class='tag tag-think'>思考题</span>" },
+        { text: "能否测试智能？如何测试？ <span class='tag tag-think'>思考题</span>" },
+        { text: "我们是否\"看到就知道\"(know it when we see it)？ <span class='tag tag-think'>思考题</span>" },
+        { text: "智能是关于\"存在\" (being) 还是\"行为\" (doing)？\"存在\"可观测吗？\"行为\"足够吗？ <span class='tag tag-think'>思考题</span>" },
+        { text: "机械/确定性系统能否是智能的？人类是确定性的吗？ <span class='tag tag-think'>思考题</span>" },
+        { text: "如果不是确定性的，非确定性的基础是什么——随机性？意识？ <span class='tag tag-think'>思考题</span>" },
+        { text: "我的狗和我的电脑，哪个更智能？ <span class='tag tag-think'>思考题</span>" },
+        { text: "人类的符号推理能力是智能的必要条件吗？ <span class='tag tag-think'>思考题</span>" },
+        { text: "智能是否必须与\"像人类\"有关？ <span class='tag tag-think'>思考题</span>" },
+        { text: "AI 是否会不可避免地\"接管一切\"？那会是什么样子？ <span class='tag tag-think'>思考题</span>" },
+      ]
+    },
+    {
+      text: "十一、无限猴子定理的隐喻 (Infinite Monkey Theorem)",
+      children: [
+        { text: "经典思想实验：无限只猴子在无限时间内用打字机能打出莎士比亚全集" },
+        { text: "类比 LLM：更多数据 + 更多计算 + 更多参数 = 一大堆猴子 <span class='tag tag-key'>重点</span>", children: [
+          { text: "这算智能吗？ <span class='tag tag-think'>思考题</span>" },
+          { text: "如果训练猴子做中间任务（如 CNN 中的滤波器/层）？" },
+          { text: "如果选择性繁殖猴子（如优化/超参数调整）？" },
+        ]},
+      ]
+    },
+  ]
+};
+
+let allNodes = [];
+
+function renderTree(node, level, parentEl) {
+  const div = document.createElement('div');
+  div.className = `node level-${level}` + (node.children ? '' : ' leaf');
+
+  const header = document.createElement('div');
+  header.className = 'node-header';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'node-toggle';
+  toggle.textContent = node.children ? '−' : '•';
+
+  const text = document.createElement('span');
+  text.className = 'node-text';
+  text.innerHTML = node.text;
+
+  header.appendChild(toggle);
+  header.appendChild(text);
+  div.appendChild(header);
+
+  let childContainer = null;
+  if (node.children) {
+    childContainer = document.createElement('div');
+    childContainer.className = 'node-children';
+    node.children.forEach(c => renderTree(c, level + 1, childContainer));
+    div.appendChild(childContainer);
+
+    header.addEventListener('click', () => {
+      const collapsed = childContainer.classList.toggle('collapsed');
+      toggle.textContent = collapsed ? '+' : '−';
+    });
+  }
+
+  allNodes.push({ div, childContainer, toggle, level });
+  parentEl.appendChild(div);
+}
+
+function toggleAll(expand) {
+  allNodes.forEach(n => {
+    if (n.childContainer) {
+      if (expand) {
+        n.childContainer.classList.remove('collapsed');
+        n.toggle.textContent = '−';
+      } else {
+        n.childContainer.classList.add('collapsed');
+        n.toggle.textContent = '+';
+      }
+    }
+  });
+}
+
+function expandLevel(targetLevel) {
+  allNodes.forEach(n => {
+    if (n.childContainer && n.level <= targetLevel) {
+      n.childContainer.classList.remove('collapsed');
+      n.toggle.textContent = '−';
+    }
+  });
+}
+
+const tree = document.getElementById('tree');
+data.children.forEach(c => renderTree(c, 0, tree));
+</script>
+
+</body>
+</html>

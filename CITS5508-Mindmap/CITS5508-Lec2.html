@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITS5508 - Lecture 2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #f0f4f8;
+    color: #1e2a3a;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4a90d9, transparent);
+  }
+
+  .header h1 {
+    font-size: 1.6em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2270b8, #1a96c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+
+  .header .subtitle {
+    font-size: 0.85em;
+    color: #5a6a80;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px 20px 8px;
+    font-size: 0.75em;
+    color: #5a6a80;
+    flex-wrap: wrap;
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  .node {
+    margin: 6px 0;
+    position: relative;
+  }
+
+  .node-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+  }
+
+  .node-header:hover {
+    background: rgba(74, 144, 217, 0.09);
+  }
+
+  .node-toggle {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    margin-top: 2px;
+    transition: all 0.2s ease;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  .node-text {
+    flex: 1;
+    line-height: 1.6;
+    font-size: 0.9em;
+  }
+
+  .node-children {
+    margin-left: 26px;
+    border-left: 1px solid rgba(74, 144, 217, 0.22);
+    padding-left: 10px;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+  }
+
+  .node-children.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .level-0 > .node-header {
+    background: linear-gradient(135deg, rgba(74, 144, 217, 0.12), rgba(126, 200, 227, 0.06));
+    border: 1px solid rgba(74, 144, 217, 0.28);
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+
+  .level-0 > .node-header .node-text {
+    font-weight: 700;
+    font-size: 1.05em;
+    color: #111111;
+  }
+
+  .level-0 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.2);
+    color: #1a6fa0;
+  }
+
+  .level-1 > .node-header .node-text {
+    font-weight: 500;
+    color: #222222;
+  }
+
+  .level-1 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.12);
+    color: #3a6aa0;
+  }
+
+  .level-2 > .node-header .node-text {
+    color: #333333;
+    font-weight: 400;
+  }
+
+  .level-2 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.08);
+    color: #5a8ab8;
+  }
+
+  .level-3 > .node-header .node-text {
+    color: #555555;
+    font-weight: 300;
+    font-size: 0.85em;
+  }
+
+  .level-3 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.05);
+    color: #4a7a9b;
+  }
+
+  .leaf > .node-header .node-toggle {
+    background: none;
+    color: #aaaaaa;
+    font-size: 6px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 0.72em;
+    font-weight: 500;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-def { background: rgba(100, 60, 190, 0.09); color: #5030a0; }
+  .tag-exam { background: rgba(180, 90, 0, 0.09); color: #a05010; }
+  .tag-data { background: rgba(0, 140, 90, 0.09); color: #007850; }
+  .tag-tip { background: rgba(160, 110, 0, 0.09); color: #806000; }
+  .tag-case { background: rgba(180, 30, 30, 0.09); color: #a02020; }
+  .tag-math { background: rgba(0, 90, 160, 0.09); color: #005090; }
+  .tag-code { background: rgba(50, 50, 50, 0.08); color: #444444; }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 0 4px;
+  }
+
+  .ctrl-btn {
+    padding: 6px 16px;
+    border: 1px solid rgba(74, 144, 217, 0.3);
+    background: rgba(74, 144, 217, 0.08);
+    color: #2270b8;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78em;
+    font-family: 'Noto Sans SC', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .ctrl-btn:hover {
+    background: rgba(74, 144, 217, 0.14);
+    border-color: rgba(74, 144, 217, 0.4);
+  }
+
+  strong { color: #111111; font-weight: 500; }
+  em { font-style: normal; color: #0a7aaa; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.88em; background: rgba(0,0,0,0.04); padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CITS5508: Machine Learning — Lecture 2</h1>
+  <div class="subtitle">机器学习项目概览 + 性能度量 + 分类 — 思维导图</div>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#b89aff"></span>定义</span>
+  <span><span class="dot" style="background:#ffaa64"></span>考试重点</span>
+  <span><span class="dot" style="background:#64dcb4"></span>数据</span>
+  <span><span class="dot" style="background:#ffd64a"></span>实用建议</span>
+  <span><span class="dot" style="background:#ff8a8a"></span>案例</span>
+  <span><span class="dot" style="background:#4a90d9"></span>数学/公式</span>
+  <span><span class="dot" style="background:#888888"></span>代码</span>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="toggleAll(true)">全部展开</button>
+  <button class="ctrl-btn" onclick="toggleAll(false)">全部折叠</button>
+  <button class="ctrl-btn" onclick="toggleAll(false); expandLevel(0); expandLevel(1);">展开两级</button>
+</div>
+
+<div class="container" id="tree"></div>
+
+<script>
+const data = {
+  text: "CITS5508 Machine Learning — Lecture 2：机器学习项目概览",
+  children: [
+    {
+      text: "一、回顾：监督学习与简单线性模型 (Recap)",
+      children: [
+        {
+          text: "1. 监督学习框架 <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "ML 算法自动构建模型，识别输入特征与目标变量之间的关系 <span class='tag tag-def'>定义</span>" },
+            { text: "前提条件：数据中存在某种模式，且我们有<strong>足够的数据</strong>" },
+            { text: "存在未知目标函数 <em>f : X → Y</em>，即 y = f(x)" },
+            { text: "拥有标注样本 (x₁, y₁), …, (xₙ, yₙ)" },
+            { text: "模型从假设空间 H 中选取 <em>g ≈ f</em> <span class='tag tag-def'>定义</span>" },
+          ]
+        },
+        {
+          text: "2. 简单学习模型（感知机）<span class='tag tag-math'>数学</span>",
+          children: [
+            { text: "模型为特征的加权求和，与阈值比较：<strong>h(x) = sgn(Σ wᵢxᵢ + b)</strong> <span class='tag tag-math'>数学</span>" },
+            { text: "<strong>偏置技巧 (Bias Trick)</strong>：将偏置 b 视为权重 w₀，引入新特征 x₀ = 1，统一写成 <em>h(x) = sgn(wᵀx)</em> <span class='tag tag-tip'>建议</span>" },
+            { text: "这样消除了对偏置的单独处理，简化公式和实现" },
+          ]
+        },
+        {
+          text: "3. NumPy 向量化 <span class='tag tag-code'>代码</span>",
+          children: [
+            { text: "用 NumPy 向量化可以消除显式循环，大幅提升计算效率" },
+            { text: "双重 for 循环实现 (n=100k, m=1000)：执行时间 <strong>27.4s</strong> <span class='tag tag-data'>数据</span>" },
+            { text: "向量化实现 <code>y_pred = np.sign(X @ w)</code>：执行时间 <strong>1.4s</strong>（快约 20 倍）<span class='tag tag-data'>数据</span>" },
+          ]
+        },
+        {
+          text: "4. 训练简单模型（感知机学习规则）<span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "需要一种策略，在算法做出<em>错误分类</em>时更新权重" },
+            { text: "<strong>更新规则</strong>：若 yᵢ ≠ h(xᵢ)，则 w ← w + yᵢxᵢ；否则 w 不变 <span class='tag tag-math'>数学</span>" },
+            { text: "每次迭代选取一个样本，如果是误分类点，就更新权重向量" },
+            { text: "本周的实验课将实现该算法 <span class='tag tag-tip'>建议</span>" },
+          ]
+        },
+      ]
+    },
+    {
+      text: "二、端到端机器学习项目 (End-to-End ML Project) <span class='tag tag-exam'>考试重点</span>",
+      children: [
+        {
+          text: "1. ML 项目六大步骤",
+          children: [
+            { text: "① <strong>理解问题并检查假设</strong> — 明确业务目标" },
+            { text: "② <strong>可视化与探索数据</strong> — 辅助理解问题" },
+            { text: "③ <strong>数据准备</strong> — 为 ML 算法准备输入（与步骤②配合进行）" },
+            { text: "④ <strong>选择模型、训练与验证</strong> — 可包括超参数调优" },
+            { text: "⑤ <strong>展示解决方案</strong>" },
+            { text: "⑥ <strong>部署、监控并持续检查假设</strong>" },
+          ]
+        },
+        {
+          text: "2. 项目流程图解",
+          children: [
+            { text: "原始数据（不同来源）→ <strong>问题规范</strong> → <strong>数据准备</strong> → 数据集（特征 + 标签）→ <strong>机器学习</strong> → <strong>评估</strong>" },
+            { text: "问题规范包括<em>业务理解 (Business Understanding)</em> 和 <em>数据理解 (Data Understanding)</em> <span class='tag tag-def'>定义</span>" },
+            { text: "<strong>领域知识 (Domain Knowledge)</strong> 在多个阶段都起关键作用——需要领域专家参与 <span class='tag tag-tip'>建议</span>" },
+          ]
+        },
+        {
+          text: "3. 回归案例：加州房价数据集 <span class='tag tag-case'>案例</span>",
+          children: [
+            { text: "California Housing Dataset：基于 1990 年美国人口普查的加州各区<em>房价中位数</em>数据集" },
+            { text: "特征包括：经度、纬度、房龄中位数、总房间数、总卧室数、人口、家庭数、收入中位数等" },
+            { text: "目标变量：<strong>房价中位数 (median_house_value)</strong>" },
+            { text: "可视化发现：人口密集区和沿海地区房价更高 <span class='tag tag-tip'>建议</span>" },
+          ]
+        },
+        {
+          text: "4. 数据可视化的重要性 <span class='tag tag-tip'>建议</span>",
+          children: [
+            { text: "通过直方图观察各特征的分布——发现数据是否存在截断、偏态或异常" },
+            { text: "例如 <em>median_house_value</em> 在 $500,000 处被截断，<em>housing_median_age</em> 在 52 处截断" },
+            { text: "收入中位数经过缩放处理（单位约为万美元）" },
+            { text: "完整 Jupyter Notebook 见教材 GitHub：handson-ml3/02_end_to_end_machine_learning_project.ipynb <span class='tag tag-code'>代码</span>" },
+          ]
+        },
+      ]
+    },
+    {
+      text: "三、性能度量 (Performance Measures) <span class='tag tag-exam'>考试重点</span>",
+      children: [
+        {
+          text: "1. 回归性能度量 <span class='tag tag-math'>数学</span>",
+          children: [
+            { text: "<strong>MSE (均方误差)</strong>：MSE(X, h) = (1/m) Σ (h(xⁱ) − yⁱ)² — 对大误差惩罚更重 <span class='tag tag-def'>定义</span>" },
+            { text: "<strong>MAE (平均绝对误差)</strong>：MAE(X, h) = (1/m) Σ |h(xⁱ) − yⁱ| — 对异常值更鲁棒 <span class='tag tag-def'>定义</span>" },
+            { text: "MSE 用 x² 函数，MAE 用 |x| 函数；MSE 可微，MAE 在零点不可微" },
+          ]
+        },
+        {
+          text: "2. 分类性能度量：准确率的陷阱 <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "<strong>准确率 (Accuracy)</strong> = 正确预测数 / 总预测数 <span class='tag tag-def'>定义</span>" },
+            { text: "MNIST 二分类示例（是5 vs 不是5）：LogisticRegression 准确率 97.4% <span class='tag tag-case'>案例</span>" },
+            { text: "<strong>陷阱</strong>：一个永远预测「不是5」的分类器也能达到 <strong>90.9%</strong> 准确率！<span class='tag tag-exam'>考试重点</span>", children: [
+              { text: "原因：5 只占总样本约 9%，这是<em>类别不平衡 (Class Imbalance)</em> 问题" },
+              { text: "因此准确率对不平衡数据集是<strong>不适合</strong>的度量指标 <span class='tag tag-tip'>建议</span>" },
+            ]},
+          ]
+        },
+        {
+          text: "3. 混淆矩阵 (Confusion Matrix) <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "<strong>混淆矩阵</strong>：统计类别 A 被分类为类别 B 的次数 <span class='tag tag-def'>定义</span>" },
+            { text: "四个关键区域：", children: [
+              { text: "<strong>TP (真正例)</strong>：实际为正、预测也为正" },
+              { text: "<strong>TN (真反例)</strong>：实际为负、预测也为负" },
+              { text: "<strong>FP (假正例)</strong>：实际为负、但预测为正（第一类错误）" },
+              { text: "<strong>FN (假反例)</strong>：实际为正、但预测为负（第二类错误）" },
+            ]},
+            { text: "示例中的混淆矩阵：TN=12599, FP=128, FN=231, TP=1042 <span class='tag tag-data'>数据</span>" },
+          ]
+        },
+        {
+          text: "4. 精确率 (Precision) <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "问题：在所有被预测为正的样本中，有多少是<em>真正</em>为正的？" },
+            { text: "<strong>Precision = TP / (TP + FP)</strong> <span class='tag tag-math'>数学</span>" },
+            { text: "也称为<em>正预测值 (Positive Predictive Value, PPV)</em> <span class='tag tag-def'>定义</span>" },
+          ]
+        },
+        {
+          text: "5. 召回率 (Recall) <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "问题：在所有实际为正的样本中，有多少被<em>正确预测</em>为正？" },
+            { text: "<strong>Recall = TP / (TP + FN)</strong> <span class='tag tag-math'>数学</span>" },
+            { text: "也称为<em>真正率 (TPR)</em> 或 <em>灵敏度 (Sensitivity)</em> <span class='tag tag-def'>定义</span>" },
+          ]
+        },
+        {
+          text: "6. 精确率/召回率权衡 (Precision/Recall Trade-off) <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "提高阈值 → 精确率↑ 但 召回率↓；降低阈值 → 召回率↑ 但 精确率↓" },
+            { text: "需要<strong>高精确率</strong>的场景（假正例代价高）：自动驾驶中判断安全变道 <span class='tag tag-case'>案例</span>" },
+            { text: "需要<strong>高召回率</strong>的场景（假反例代价高）：癌症筛查——漏诊比误诊更严重 <span class='tag tag-case'>案例</span>" },
+            { text: "精确率-召回率曲线 (PR Curve)：直观展示不同阈值下二者的关系" },
+          ]
+        },
+        {
+          text: "7. F1 分数 (F1 Score) <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "F1 是精确率与召回率的<strong>调和平均数 (Harmonic Mean)</strong>：F1 = 2 / (1/precision + 1/recall) <span class='tag tag-math'>数学</span>" },
+            { text: "为何用调和平均而非算术平均？<span class='tag tag-tip'>建议</span>", children: [
+              { text: "算术平均 (0.9, 0.1) = 0.5 — 看起来还行" },
+              { text: "调和平均 (0.9, 0.1) = 0.18 — 更合理地惩罚了极端不平衡" },
+            ]},
+            { text: "F1 在精确率和召回率都较高时才会高，适合作为单一综合指标" },
+          ]
+        },
+        {
+          text: "8. ROC 曲线与 AUC <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "<strong>ROC 曲线</strong>：以不同阈值绘制 TPR (召回率) vs FPR (假正率) <span class='tag tag-def'>定义</span>" },
+            { text: "关键指标定义 <span class='tag tag-math'>数学</span>：", children: [
+              { text: "<strong>TPR (真正率/召回率)</strong> = TP / (TP + FN)" },
+              { text: "<strong>TNR (特异度/Specificity)</strong> = TN / (FP + TN)" },
+              { text: "<strong>FPR (假正率)</strong> = FP / (FP + TN) = 1 − Specificity" },
+            ]},
+            { text: "ROC 曲线：纵轴为 Recall，横轴为 1 − Specificity" },
+            { text: "随机分类器的 ROC 是对角线（从 (0,0) 到 (1,1)）" },
+            { text: "<strong>AUC (曲线下面积)</strong>：越接近 1 越好；好的分类器曲线紧贴左上角 <span class='tag tag-def'>定义</span>" },
+          ]
+        },
+      ]
+    },
+    {
+      text: "四、分类实战：MNIST 数据集 <span class='tag tag-case'>案例</span>",
+      children: [
+        {
+          text: "1. MNIST 数据集简介 <span class='tag tag-data'>数据</span>",
+          children: [
+            { text: "<strong>MNIST</strong>：Modified National Institute of Standards and Technology 数据集 <span class='tag tag-def'>定义</span>" },
+            { text: "包含 <strong>70,000</strong> 张手写数字小图片" },
+            { text: "每张图 28×28 像素 = <strong>784 个特征</strong>，像素值 xᵢ ∈ [0, 255]" },
+            { text: "标签为 0–9 共 10 个数字类别" },
+          ]
+        },
+        {
+          text: "2. 二分类示例：识别数字 5 <span class='tag tag-case'>案例</span>",
+          children: [
+            { text: "将问题简化为「是5」与「不是5」两类：<code>y = (y == 5)</code>" },
+            { text: "这是一个典型的<em>二分类 (Binary Classification)</em> 问题" },
+          ]
+        },
+        {
+          text: "3. 数据拆分与模型训练 <span class='tag tag-code'>代码</span>",
+          children: [
+            { text: "<strong>避免数据窥探偏差 (Data Snooping Bias)</strong>：先分出测试集再做任何分析 <span class='tag tag-exam'>考试重点</span>" },
+            { text: "使用 <code>train_test_split(X, y, test_size=0.2, random_state=42)</code> <span class='tag tag-code'>代码</span>" },
+            { text: "<strong>random_state</strong> 是随机数种子，确保实验可复现 <span class='tag tag-tip'>建议</span>" },
+            { text: "创建 LogisticRegression 分类器并 fit 训练数据 <span class='tag tag-code'>代码</span>" },
+          ]
+        },
+      ]
+    },
+    {
+      text: "五、采样偏差 (Sampling Bias) <span class='tag tag-case'>案例</span>",
+      children: [
+        {
+          text: "经典案例：1936 年美国总统大选",
+          children: [
+            { text: "《Literary Digest》向约 1000 万人发送邮件调查，收到 240 万份回复 <span class='tag tag-data'>数据</span>" },
+            { text: "预测 Landon（共和党）将获得 57% 的选票" },
+            { text: "实际结果：Roosevelt（民主党）以 62% 的选票获胜 <span class='tag tag-data'>数据</span>" },
+          ]
+        },
+        {
+          text: "问题分析 <span class='tag tag-exam'>考试重点</span>",
+          children: [
+            { text: "地址列表偏向<strong>富裕人群</strong>，他们更倾向于投票给共和党" },
+            { text: "回复率不到 <strong>25%</strong>——存在<em>无响应偏差 (Non-response Bias)</em>" },
+            { text: "教训：数据量大 ≠ 数据有代表性；<strong>采样方法比样本量更重要</strong> <span class='tag tag-tip'>建议</span>" },
+          ]
+        },
+      ]
+    },
+    {
+      text: "六、多类分类 (Multiclass Classification)",
+      children: [
+        { text: "二分类只区分两个类别，多类分类要区分 N > 2 个类别 <span class='tag tag-def'>定义</span>" },
+        { text: "某些算法<strong>天然支持多类</strong>：Softmax 回归、随机森林、朴素贝叶斯" },
+        { text: "某些算法<strong>只支持二分类</strong>：如 SVM（支持向量机）" },
+        { text: "可通过训练多个二分类器的技巧实现多类分类（将在第 4 周详细讨论）<span class='tag tag-tip'>建议</span>" },
+      ]
+    },
+    {
+      text: "推荐阅读",
+      children: [
+        { text: "Géron《Hands-on ML with Scikit-Learn & TensorFlow》<strong>Chapter 2</strong>: End-to-End Machine Learning Project" },
+        { text: "Géron《Hands-on ML with Scikit-Learn & TensorFlow》<strong>Chapter 3</strong>: Classification" },
+        { text: "配套 Notebook: handson-ml3/02_end_to_end_machine_learning_project.ipynb <span class='tag tag-code'>代码</span>" },
+        { text: "配套 Notebook: handson-ml3/03_classification.ipynb <span class='tag tag-code'>代码</span>" },
+      ]
+    },
+  ]
+};
+
+let allNodes = [];
+
+function renderTree(node, level, parentEl) {
+  const div = document.createElement('div');
+  div.className = `node level-${level}` + (node.children ? '' : ' leaf');
+
+  const header = document.createElement('div');
+  header.className = 'node-header';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'node-toggle';
+  toggle.textContent = node.children ? '−' : '•';
+
+  const text = document.createElement('span');
+  text.className = 'node-text';
+  text.innerHTML = node.text;
+
+  header.appendChild(toggle);
+  header.appendChild(text);
+  div.appendChild(header);
+
+  let childContainer = null;
+  if (node.children) {
+    childContainer = document.createElement('div');
+    childContainer.className = 'node-children';
+    node.children.forEach(c => renderTree(c, level + 1, childContainer));
+    div.appendChild(childContainer);
+
+    header.addEventListener('click', () => {
+      const collapsed = childContainer.classList.toggle('collapsed');
+      toggle.textContent = collapsed ? '+' : '−';
+    });
+  }
+
+  allNodes.push({ div, childContainer, toggle, level });
+  parentEl.appendChild(div);
+}
+
+function toggleAll(expand) {
+  allNodes.forEach(n => {
+    if (n.childContainer) {
+      if (expand) {
+        n.childContainer.classList.remove('collapsed');
+        n.toggle.textContent = '−';
+      } else {
+        n.childContainer.classList.add('collapsed');
+        n.toggle.textContent = '+';
+      }
+    }
+  });
+}
+
+function expandLevel(targetLevel) {
+  allNodes.forEach(n => {
+    if (n.childContainer && n.level <= targetLevel) {
+      n.childContainer.classList.remove('collapsed');
+      n.toggle.textContent = '−';
+    }
+  });
+}
+
+const tree = document.getElementById('tree');
+data.children.forEach(c => renderTree(c, 0, tree));
+</script>
+
+</body>
+</html>

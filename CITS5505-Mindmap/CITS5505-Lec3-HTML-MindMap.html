@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITS5505 - Lecture 3: HTML</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #f0f4f8;
+    color: #1e2a3a;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4a90d9, transparent);
+  }
+
+  .header h1 {
+    font-size: 1.6em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2270b8, #1a96c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+
+  .header .subtitle {
+    font-size: 0.85em;
+    color: #5a6a80;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px 20px 8px;
+    font-size: 0.75em;
+    color: #5a6a80;
+    flex-wrap: wrap;
+  }
+
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 20px 16px 60px; }
+  .node { margin: 6px 0; position: relative; }
+
+  .node-header {
+    display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px;
+    border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+    position: relative; user-select: none;
+  }
+  .node-header:hover { background: rgba(74, 144, 217, 0.09); }
+
+  .node-toggle {
+    width: 18px; height: 18px; min-width: 18px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; margin-top: 2px; transition: all 0.2s ease;
+    font-family: 'JetBrains Mono', monospace; font-weight: 500;
+  }
+
+  .node-text { flex: 1; line-height: 1.6; font-size: 0.9em; }
+
+  .node-children {
+    margin-left: 26px; border-left: 1px solid rgba(74, 144, 217, 0.22);
+    padding-left: 10px; overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+  }
+  .node-children.collapsed { max-height: 0 !important; opacity: 0; pointer-events: none; }
+
+  .level-0 > .node-header {
+    background: linear-gradient(135deg, rgba(74, 144, 217, 0.12), rgba(126, 200, 227, 0.06));
+    border: 1px solid rgba(74, 144, 217, 0.28); border-radius: 10px; margin-bottom: 4px;
+  }
+  .level-0 > .node-header .node-text { font-weight: 700; font-size: 1.05em; color: #111111; }
+  .level-0 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.2); color: #1a6fa0; }
+
+  .level-1 > .node-header .node-text { font-weight: 500; color: #222222; }
+  .level-1 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.12); color: #3a6aa0; }
+
+  .level-2 > .node-header .node-text { color: #333333; font-weight: 400; }
+  .level-2 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.08); color: #5a8ab8; }
+
+  .level-3 > .node-header .node-text { color: #555555; font-weight: 300; font-size: 0.85em; }
+  .level-3 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.05); color: #4a7a9b; }
+
+  .leaf > .node-header .node-toggle { background: none; color: #aaaaaa; font-size: 6px; }
+
+  .tag {
+    display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 0.72em;
+    font-weight: 500; margin-left: 6px; vertical-align: middle;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tag-def { background: rgba(100, 60, 190, 0.09); color: #5030a0; }
+  .tag-exam { background: rgba(180, 90, 0, 0.09); color: #a05010; }
+  .tag-data { background: rgba(0, 140, 90, 0.09); color: #007850; }
+  .tag-tip { background: rgba(160, 110, 0, 0.09); color: #806000; }
+  .tag-case { background: rgba(180, 30, 30, 0.09); color: #a02020; }
+
+  .controls { display: flex; justify-content: center; gap: 12px; padding: 12px 0 4px; }
+  .ctrl-btn {
+    padding: 6px 16px; border: 1px solid rgba(74, 144, 217, 0.3);
+    background: rgba(74, 144, 217, 0.08); color: #2270b8; border-radius: 6px;
+    cursor: pointer; font-size: 0.78em; font-family: 'Noto Sans SC', sans-serif; transition: all 0.2s;
+  }
+  .ctrl-btn:hover { background: rgba(74, 144, 217, 0.14); border-color: rgba(74, 144, 217, 0.4); }
+
+  strong { color: #111111; font-weight: 500; }
+  em { font-style: normal; color: #0a7aaa; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.88em; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; }
+
+  .back-btn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: white;
+    border: 1px solid rgba(74, 144, 217, 0.3);
+    border-radius: 8px;
+    color: #2270b8;
+    font-size: 0.82em;
+    font-weight: 500;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+  }
+  .back-btn:hover {
+    background: rgba(74, 144, 217, 0.08);
+    border-color: rgba(74, 144, 217, 0.5);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+  }
+</style>
+</head>
+<body>
+
+<a class="back-btn" href="../index.html">← Home</a>
+
+<div class="header">
+  <h1>Lecture 3: HTML — 超文本标记语言</h1>
+  <div class="subtitle">CITS3403/CITS5505 Agile Web Development — 思维导图</div>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#b89aff"></span>\u5b9a\u4e49</span>
+  <span><span class="dot" style="background:#ffaa64"></span>\u91cd\u70b9</span>
+  <span><span class="dot" style="background:#64dcb4"></span>\u6570\u636e</span>
+  <span><span class="dot" style="background:#ffd64a"></span>\u5b9e\u7528\u5efa\u8bae</span>
+  <span><span class="dot" style="background:#ff8a8a"></span>\u6848\u4f8b</span>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="toggleAll(true)">\u5168\u90e8\u5c55\u5f00</button>
+  <button class="ctrl-btn" onclick="toggleAll(false)">\u5168\u90e8\u6298\u53e0</button>
+  <button class="ctrl-btn" onclick="toggleAll(false); expandLevel(0); expandLevel(1);">\u5c55\u5f00\u4e24\u7ea7</button>
+</div>
+
+<div class="container" id="tree"></div>
+
+<script>
+const data = {
+  text: "CITS5505 Lecture 3 \u2014 HTML",
+  children: [
+    {
+      text: "\u4e00\u3001Web \u4e09\u5927\u6838\u5fc3\u6280\u672f (Key Web Technologies)",
+      children: [
+        { text: "<strong>HTML</strong>\uff1a\u63cf\u8ff0\u7f51\u9875\u7684<em>\u8bed\u4e49\u5185\u5bb9</em>\u548c\u5185\u5bb9\u95f4\u7684<em>\u903b\u8f91\u5173\u7cfb</em> <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "<strong>CSS</strong>\uff1a\u63cf\u8ff0\u7f51\u9875\u7684<em>\u6837\u5f0f\u548c\u5916\u89c2</em>" },
+        { text: "<strong>JavaScript</strong>\uff1a\u5728\u5ba2\u6237\u7aef\u8fd0\u884c\u7684\u89e3\u91ca\u578b\u8bed\u8a00\uff0c\u63d0\u4f9b\u7f51\u9875<em>\u4ea4\u4e92\u529f\u80fd</em>" },
+      ]
+    },
+    {
+      text: "\u4e8c\u3001HTML \u7b80\u4ecb (HTML Basics)",
+      children: [
+        { text: "HTML \u7531 Tim Berners-Lee \u4e8e 1990 \u5e74\u5b9a\u4e49\uff0c\u6700\u521d\u57fa\u4e8e SGML" },
+        { text: "HTML5 \u4e8e 2008 \u5e74\u53d1\u5e03\uff0c\u662f\u4e00\u6b21\u91cd\u5927\u6539\u7248 <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "<strong>HTML5 \u8bbe\u8ba1\u54f2\u5b66</strong> <span class='tag tag-exam'>\u91cd\u70b9</span>", children: [
+          { text: "1. <em>\u4e92\u64cd\u4f5c\u6027</em>\uff1a\u5e94\u80fd\u5728\u5404\u79cd\u6d4f\u89c8\u5668\u4e0a\u6e32\u67d3" },
+          { text: "2. <em>\u4f18\u96c5\u7684\u9519\u8bef\u6062\u590d</em>\uff1a\u5c0f\u9519\u8bef\u4e0d\u5e94\u963b\u6b62\u9875\u9762\u6e32\u67d3" },
+          { text: "3. <em>\u5411\u540e\u517c\u5bb9</em>\uff1a\u65b0\u7279\u6027\u4e0d\u5e94\u7834\u574f\u73b0\u6709\u7f51\u9875" },
+          { text: "4. <em>\u4f18\u5148\u7528\u6237</em>\uff1a\u7528\u6237 > \u7f51\u9875\u8bbe\u8ba1\u5e08 > \u6d4f\u89c8\u5668\u5b9e\u73b0\u8005 > \u7406\u8bba\u5bb6" },
+        ]},
+      ]
+    },
+    {
+      text: "\u4e09\u3001HTML \u5143\u7d20 (HTML Elements)",
+      children: [
+        { text: "HTML \u6587\u6863\u7531<em>\u5143\u7d20 (elements)</em> \u7ec4\u6210 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "\u5143\u7d20\u901a\u5e38\u5305\u542b\uff1a<em>\u5f00\u6807\u7b7e</em> + <em>\u5185\u5bb9</em> + <em>\u95ed\u6807\u7b7e</em>" },
+        { text: "\u4f8b\uff1a<code>&lt;tagname&gt;\u5185\u5bb9&lt;/tagname&gt;</code>" },
+        { text: "\u5143\u7d20\u5185\u5bb9\u53ef\u4ee5\u5305\u542b\u5176\u4ed6\u5143\u7d20 \u2192 HTML \u662f<em>\u6811\u5f62\u6570\u636e\u7ed3\u6784</em> <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+      ]
+    },
+    {
+      text: "\u56db\u3001HTML \u6587\u6863\u7ed3\u6784 (Document Structure)",
+      children: [
+        { text: "\u4ee5 <code>&lt;!DOCTYPE html&gt;</code> \u58f0\u660e\u5f00\u59cb" },
+        { text: "\u6839\u5143\u7d20\u4e3a <code>&lt;html&gt;</code>" },
+        { text: "\u5305\u542b <code>&lt;head&gt;</code>\uff08\u5143\u6570\u636e\uff09\u548c <code>&lt;body&gt;</code>\uff08\u53ef\u89c1\u5185\u5bb9\uff09" },
+        { text: "<code>&lt;title&gt;</code> \u8bbe\u7f6e\u9875\u9762\u6807\u9898\uff0c\u663e\u793a\u5728\u6d4f\u89c8\u5668\u6807\u9898\u680f" },
+        { text: "\u53ef\u89c1\u5143\u7d20\u90fd\u5728 <code>&lt;body&gt;</code> \u5206\u652f\u4e2d" },
+      ]
+    },
+    {
+      text: "\u4e94\u3001HTML \u9a8c\u8bc1\u89c4\u5219 (HTML Validity)",
+      children: [
+        { text: "\u6d4f\u89c8\u5668\u6e32\u67d3\u5668\u975e\u5e38\u5bbd\u5bb9 <span class='tag tag-tip'>\u5b9e\u7528\u5efa\u8bae</span>", children: [
+          { text: "\u5ffd\u7565\u672a\u8bc6\u522b\u7684\u6807\u7b7e" },
+          { text: "\u5ffd\u7565\u6362\u884c\u7b26" },
+          { text: "\u5ffd\u7565\u591a\u4f59\u7a7a\u683c\u548c\u5236\u8868\u7b26" },
+        ]},
+        { text: "\u751a\u81f3\u4e0d\u9700\u8981 <code>&lt;html&gt;</code>\u3001<code>&lt;head&gt;</code>\u3001<code>&lt;body&gt;</code> \u7b49\u5173\u952e\u6807\u7b7e" },
+        { text: "\u5f00\u95ed\u6807\u7b7e\u4e0d\u5339\u914d\u4e5f\u80fd\u8fd0\u884c\uff08\u4f46\u5f3a\u70c8\u5efa\u8bae\u5339\u914d\uff01\uff09 <span class='tag tag-case'>\u6848\u4f8b</span>" },
+        { text: "\u6807\u7b7e\u53ea\u662f\u5bf9\u6d4f\u89c8\u5668\u7684\u5efa\u8bae\uff0c\u6d4f\u89c8\u5668\u53ef\u4ee5\u5ffd\u7565" },
+      ]
+    },
+    {
+      text: "\u516d\u3001HTML \u6587\u672c\u5143\u7d20 (HTML Text)",
+      children: [
+        { text: "\u6587\u672c\u53ef\u4f5c\u4e3a\u591a\u79cd\u5143\u7d20\u7684\u5185\u5bb9", children: [
+          { text: "\u6807\u9898\uff1a<code>&lt;h1&gt;</code> ~ <code>&lt;h4&gt;</code>" },
+          { text: "\u6bb5\u843d\uff1a<code>&lt;p&gt;</code>" },
+          { text: "\u4ee3\u7801\uff1a<code>&lt;code&gt;</code>" },
+          { text: "\u5f3a\u8c03\uff1a<code>&lt;em&gt;</code>" },
+        ]},
+        { text: "\u8fd9\u4e9b\u5143\u7d20\u90fd\u53ef\u4ee5\u5d4c\u5957\u4f7f\u7528" },
+        { text: "\u7279\u6b8a\u5b57\u7b26\u4f7f\u7528 <code>&amp;...;</code> \u8f6c\u4e49\uff0c\u5982 <code>&amp;amp;</code>\u3001<code>&amp;lt;</code>\u3001<code>&amp;gt;</code>\u3001<code>&amp;nbsp;</code> \u7b49" },
+      ]
+    },
+    {
+      text: "\u4e03\u3001HTML \u56fe\u7247 (HTML Images)",
+      children: [
+        { text: "\u6240\u6709\u6807\u7b7e\u53ef\u4ee5\u6709<em>\u5c5e\u6027 (attributes)</em>\uff0c\u4f4d\u4e8e\u6807\u7b7e\u540d\u548c\u53f3\u62ec\u53f7\u4e4b\u95f4 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "\u63d2\u5165\u56fe\u7247\uff1a<code>&lt;img src=&quot;...&quot; alt=&quot;...&quot;&gt;</code>" },
+        { text: "<code>src</code> \u5c5e\u6027\u6307\u5b9a\u56fe\u7247\u8def\u5f84" },
+        { text: "<code>alt</code> \u5c5e\u6027\u63d0\u4f9b\u66ff\u4ee3\u6587\u5b57\uff08\u56fe\u7247\u65e0\u6cd5\u663e\u793a\u65f6\u6216\u5c4f\u5e55\u9605\u8bfb\u5668\u4f7f\u7528\uff09" },
+      ]
+    },
+    {
+      text: "\u516b\u3001HTML \u5217\u8868 (HTML Lists)",
+      children: [
+        { text: "\u6709\u5e8f\u5217\u8868\uff1a<code>&lt;ol&gt;</code>\uff0c\u65e0\u5e8f\u5217\u8868\uff1a<code>&lt;ul&gt;</code>" },
+        { text: "\u5217\u8868\u9879\u4f7f\u7528 <code>&lt;li&gt;</code> \u6807\u7b7e" },
+        { text: "<code>&lt;ol&gt;</code> \u7684 <code>type</code> \u5c5e\u6027\u53ef\u6539\u53d8\u5217\u8868\u6807\u8bb0\u6837\u5f0f\uff08\u5982\u5b57\u6bcd\uff09" },
+      ]
+    },
+    {
+      text: "\u4e5d\u3001HTML \u8868\u683c (HTML Tables)",
+      children: [
+        { text: "\u8868\u683c\u7ed3\u6784", children: [
+          { text: "<code>&lt;table&gt;</code>\uff1a\u5b9a\u4e49\u8868\u683c" },
+          { text: "<code>&lt;tr&gt;</code>\uff1a\u5b9a\u4e49\u884c" },
+          { text: "<code>&lt;th&gt;</code>\uff1a\u5b9a\u4e49\u8868\u5934\u5355\u5143\u683c" },
+          { text: "<code>&lt;td&gt;</code>\uff1a\u5b9a\u4e49\u6570\u636e\u5355\u5143\u683c" },
+        ]},
+        { text: "\u8868\u683c\u5c5e\u6027\uff1a<code>cellspacing</code>\u3001<code>cellpadding</code>\u3001<code>border</code>" },
+        { text: "<strong>\u4e0d\u8981\u7528\u65e0\u8fb9\u6846\u8868\u683c\u505a\u9875\u9762\u5e03\u5c40\uff01</strong> <span class='tag tag-case'>\u6848\u4f8b</span>", children: [
+          { text: "\u8fdd\u53cd\u8bed\u4e49\u610f\u56fe\u2014\u2014\u5c4f\u5e55\u9605\u8bfb\u5668\u4f1a\u5c06\u5176\u8bfb\u4f5c\u8868\u683c" },
+          { text: "\u6d4f\u89c8\u5668\u53ef\u80fd\u5f3a\u5236\u4ee5\u8868\u683c\u65b9\u5f0f\u6e32\u67d3" },
+          { text: "\u6df1\u5c42\u5d4c\u5957\u8868\u683c\u96be\u4ee5\u7ef4\u62a4" },
+          { text: "\u6e32\u67d3\u53ef\u80fd\u5f88\u6162" },
+        ]},
+      ]
+    },
+    {
+      text: "\u5341\u3001HTML \u8d85\u94fe\u63a5 (HTML Hypertext Links)",
+      children: [
+        { text: "\u8d85\u6587\u672c\u662f Web \u7684\u6838\u5fc3\u5356\u70b9\u4e4b\u4e00\uff01" },
+        { text: "\u4f7f\u7528 <code>&lt;a href=&quot;...&quot;&gt;</code> \u951a\u6807\u7b7e\u521b\u5efa\u94fe\u63a5" },
+        { text: "<code>&lt;a&gt;</code> \u7684\u5185\u5bb9\u662f\u53ef\u89c1\u7684\u94fe\u63a5\uff08\u53ef\u4ee5\u662f\u6587\u672c\u6216\u56fe\u7247\uff09" },
+        { text: "\u540c\u9875\u6216\u540c\u7ad9\u5185\u94fe\u63a5\u4f7f\u7528<em>\u76f8\u5bf9\u8def\u5f84</em>\u800c\u975e\u7edd\u5bf9\u8def\u5f84 <span class='tag tag-tip'>\u5b9e\u7528\u5efa\u8bae</span>" },
+        { text: "\u53ef\u7528 <code>id</code> \u5c5e\u6027\u94fe\u63a5\u5230\u540c\u4e00\u6587\u6863\u5185\u7684\u5143\u7d20\uff1a<code>&lt;a href=&quot;#Link&quot;&gt;</code>" },
+        { text: "\u94fe\u63a5\u53ef\u4ee5\u6307\u5411\u4efb\u4f55\u6587\u4ef6\u7c7b\u578b\uff0c\u4e0d\u9650\u4e8e HTML" },
+      ]
+    },
+    {
+      text: "\u5341\u4e00\u3001span \u548c div \u5143\u7d20 (Span & Div)",
+      children: [
+        { text: "\u7528\u4e8e\u5c06\u4efb\u610f\u5143\u7d20\u96c6\u5408<em>\u5206\u7ec4</em>\uff08\u5982\u7edf\u4e00\u683c\u5f0f\u3001\u753b\u8fb9\u6846\u7b49\uff09" },
+        { text: "<code>&lt;span&gt;</code>\uff1a\u884c\u5185\u5206\u7ec4\uff08\u5982\u53e5\u5b50\u4e2d\u7684\u51e0\u4e2a\u8bcd\uff09 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<code>&lt;div&gt;</code>\uff1a\u5757\u7ea7\u5206\u7ec4\uff08\u5982\u591a\u4e2a\u6bb5\u843d\u6216\u56fe\u7247\uff09 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "\u9ed8\u8ba4\u60c5\u51b5\u4e0b\u8fd9\u4e24\u4e2a\u5143\u7d20\u672c\u8eab\u4e0d\u6e32\u67d3\u4efb\u4f55\u5185\u5bb9" },
+      ]
+    },
+    {
+      text: "\u5341\u4e8c\u3001Canvas \u5143\u7d20 (HTML Canvas)",
+      children: [
+        { text: "<code>&lt;canvas&gt;</code> \u521b\u5efa\u4e00\u4e2a\u77e9\u5f62\u533a\u57df\uff0c\u53ef\u901a\u8fc7 JavaScript \u7ed8\u5236\u4f4d\u56fe\u56fe\u5f62" },
+        { text: "\u53ef\u7528\u4e8e\u521b\u5efa\u4ea4\u4e92\u5f0f\u52a8\u753b\u548c\u6e38\u620f" },
+      ]
+    },
+    {
+      text: "\u5341\u4e09\u3001HTML5 \u9ad8\u7ea7\u5e03\u5c40\u5143\u7d20 (Advanced Layout Elements)",
+      children: [
+        { text: "<code>&lt;header&gt;</code>\uff1a\u5305\u542b\u9875\u9762\u6216\u533a\u57df\u7684\u4ecb\u7ecd\u4fe1\u606f <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<code>&lt;nav&gt;</code>\uff1a\u5305\u542b\u5bfc\u822a\u94fe\u63a5\u7684\u533a\u57df <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<code>&lt;section&gt;</code>\uff1a\u901a\u7528\u6587\u6863\u533a\u5757\uff0c\u7c7b\u4f3c div \u4f46\u6709\u8bed\u4e49\u610f\u4e49 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<code>&lt;article&gt;</code>\uff1a\u53ef\u72ec\u7acb\u5b58\u5728\u7684\u5185\u5bb9\uff08\u5982\u535a\u5ba2\u6587\u7ae0\u3001\u8bba\u575b\u5e16\u5b50\uff09 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<code>&lt;aside&gt;</code>\uff1a\u4e0e\u4e3b\u5185\u5bb9\u76f8\u5173\u7684\u8f85\u52a9\u5185\u5bb9\uff08\u5982\u4fa7\u8fb9\u680f\uff09 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<code>&lt;footer&gt;</code>\uff1a\u9875\u9762\u6216\u533a\u57df\u7684\u9875\u811a <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+      ]
+    },
+    {
+      text: "\u5341\u56db\u3001HTML \u8868\u5355 (HTML Forms)",
+      children: [
+        { text: "<code>&lt;form&gt;</code> \u662f\u4ece\u6d4f\u89c8\u5668\u5411\u670d\u52a1\u5668\u53d1\u9001\u6570\u636e\u7684\u6807\u51c6\u65b9\u5f0f <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "<code>&lt;input&gt;</code> \u521b\u5efa\u6536\u96c6\u4fe1\u606f\u7684\u63a7\u4ef6\uff08\u6587\u672c\u6846\u3001\u5355\u9009\u3001\u590d\u9009\u7b49\uff09" },
+        { text: "<code>&lt;fieldset&gt;</code> \u5c06 input \u5143\u7d20\u5206\u7ec4" },
+        { text: "<code>&lt;label&gt;</code> \u4e3a input \u521b\u5efa\u6807\u7b7e\uff0c\u901a\u8fc7 <code>for</code> \u5c5e\u6027\u4e0e input \u7684 <code>id</code> \u5173\u8054" },
+      ]
+    },
+    {
+      text: "\u5341\u4e94\u3001\u8868\u5355 input \u5c5e\u6027 (Form Input Attributes)",
+      children: [
+        { text: "<code>type</code> \u5c5e\u6027\u51b3\u5b9a\u6e32\u67d3\u65b9\u5f0f <span class='tag tag-exam'>\u91cd\u70b9</span>", children: [
+          { text: "\u5e38\u89c1\u7c7b\u578b\uff1abutton, checkbox, color, date, email, file, number, password, radio, range, submit, text, time, url \u7b49" },
+        ]},
+        { text: "<code>value</code>\uff1a\u521d\u59cb\u503c" },
+        { text: "<code>readonly</code>\uff1a\u7528\u6237\u4e0d\u53ef\u7f16\u8f91" },
+        { text: "<code>placeholder</code>\uff1a\u8f93\u5165\u63d0\u793a" },
+        { text: "<code>required</code>\uff1a\u5f3a\u5236\u7528\u6237\u586b\u5199" },
+        { text: "\u4f7f\u7528\u6b63\u786e\u7684\u8bed\u4e49 input type \u53ef\u8ba9\u6d4f\u89c8\u5668\u81ea\u52a8\u4f18\u5316\uff08\u5982\u624b\u673a\u952e\u76d8\u7c7b\u578b\u53d8\u5316\uff09 <span class='tag tag-tip'>\u5b9e\u7528\u5efa\u8bae</span>" },
+      ]
+    },
+    {
+      text: "\u5341\u516d\u3001\u8868\u5355\u63d0\u4ea4 (Submitting a Form)",
+      children: [
+        { text: "<code>type=&quot;submit&quot;</code> \u7684 input \u751f\u6210\u63d0\u4ea4\u6309\u94ae" },
+        { text: "\u70b9\u51fb\u540e\u5c06\u8868\u5355\u503c\u53d1\u9001\u5230 <code>action</code> \u5c5e\u6027\u6307\u5b9a\u7684 URL" },
+        { text: "\u6bcf\u4e2a input \u7684\u503c\u4ee5 <code>name=value</code> \u952e\u503c\u5bf9\u5f62\u5f0f\u53d1\u9001" },
+        { text: "<code>method</code> \u5c5e\u6027 <span class='tag tag-exam'>\u91cd\u70b9</span>", children: [
+          { text: "<strong>GET</strong>\uff1a\u5c06\u8868\u5355\u503c\u8ffd\u52a0\u5230 URL \u4e2d" },
+          { text: "<strong>POST</strong>\uff1a\u5c06\u8868\u5355\u503c\u7f16\u7801\u5728\u8bf7\u6c42\u4f53\u4e2d" },
+        ]},
+      ]
+    },
+    {
+      text: "\u5341\u4e03\u3001\u8868\u5355\u9a8c\u8bc1 (Form Validation)",
+      children: [
+        { text: "<strong>\u65b9\u6cd5\u4e00</strong>\uff1aHTML \u539f\u751f\u9a8c\u8bc1 <span class='tag tag-tip'>\u5b9e\u7528\u5efa\u8bae</span>", children: [
+          { text: "email\u3001url\u3001tel \u7c7b\u578b\u81ea\u52a8\u8fdb\u884c\u57fa\u7840\u9a8c\u8bc1" },
+          { text: "\u6570\u503c\u8f93\u5165\uff1a<code>max</code>\u3001<code>min</code>\u3001<code>step</code>" },
+          { text: "\u6587\u672c\u8f93\u5165\uff1a<code>maxlength</code>\u3001<code>pattern</code>" },
+        ]},
+        { text: "<strong>\u65b9\u6cd5\u4e8c</strong>\uff1a\u7528 JavaScript \u7f16\u5199\u81ea\u5b9a\u4e49\u9a8c\u8bc1\u903b\u8f91\uff08\u66f4\u7075\u6d3b\uff09" },
+        { text: "<strong>\u5ba2\u6237\u7aef\u9a8c\u8bc1\u5f88\u5bb9\u6613\u7ed5\u8fc7\uff01\u52a1\u5fc5\u5728\u670d\u52a1\u5668\u7aef\u4e5f\u8fdb\u884c\u9a8c\u8bc1\uff01</strong> <span class='tag tag-case'>\u6848\u4f8b</span>" },
+      ]
+    },
+    {
+      text: "\u5341\u516b\u3001HTML \u65e5\u671f\u4e0e\u65f6\u95f4 (HTML Dates & Times)",
+      children: [
+        { text: "<code>&lt;time&gt;</code> \u5143\u7d20\uff1a\u7528 <code>datetime</code> \u5c5e\u6027\u7f16\u7801\u65f6\u95f4\u4fe1\u606f" },
+        { text: "\u6301\u7eed\u65f6\u95f4\u683c\u5f0f\uff1aP \u524d\u7f00 + D(\u5929) / T + H(\u65f6)M(\u5206)S(\u79d2)" },
+        { text: "<code>pubdate</code> \u5c5e\u6027\u8868\u793a\u9875\u9762\u53d1\u5e03\u65f6\u95f4" },
+        { text: "<strong>\u65e5\u671f\u65f6\u95f4 input \u7c7b\u578b</strong> <span class='tag tag-exam'>\u91cd\u70b9</span>", children: [
+          { text: "\u6807\u51c6\u683c\u5f0f\uff1a<code>YYYY-MM-DDThh:mm:ss.Z</code>" },
+          { text: "<code>datetime</code>\uff1a\u5b8c\u6574\u65e5\u671f+\u65f6\u95f4+\u65f6\u533a" },
+          { text: "<code>datetime-local</code>\uff1a\u65e5\u671f+\u65f6\u95f4\uff08\u65e0\u65f6\u533a\uff09" },
+          { text: "<code>date</code>\uff1a\u5e74\u6708\u65e5" },
+          { text: "<code>month</code>\uff1a\u5e74\u6708" },
+          { text: "<code>time</code>\uff1a\u65f6\u5206\u79d2" },
+          { text: "\u6ce8\u610f\uff1a\u6ca1\u6709\u5355\u72ec\u7684 year \u7c7b\u578b" },
+        ]},
+      ]
+    },
+  ]
+};
+
+let allNodes = [];
+
+function renderTree(node, level, parentEl) {
+  const div = document.createElement('div');
+  div.className = `node level-${level}` + (node.children ? '' : ' leaf');
+
+  const header = document.createElement('div');
+  header.className = 'node-header';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'node-toggle';
+  toggle.textContent = node.children ? '\u2212' : '\u2022';
+
+  const text = document.createElement('span');
+  text.className = 'node-text';
+  text.innerHTML = node.text;
+
+  header.appendChild(toggle);
+  header.appendChild(text);
+  div.appendChild(header);
+
+  let childContainer = null;
+  if (node.children) {
+    childContainer = document.createElement('div');
+    childContainer.className = 'node-children';
+    node.children.forEach(c => renderTree(c, level + 1, childContainer));
+    div.appendChild(childContainer);
+
+    header.addEventListener('click', () => {
+      const collapsed = childContainer.classList.toggle('collapsed');
+      toggle.textContent = collapsed ? '+' : '\u2212';
+    });
+  }
+
+  allNodes.push({ div, childContainer, toggle, level });
+  parentEl.appendChild(div);
+}
+
+function toggleAll(expand) {
+  allNodes.forEach(n => {
+    if (n.childContainer) {
+      if (expand) {
+        n.childContainer.classList.remove('collapsed');
+        n.toggle.textContent = '\u2212';
+      } else {
+        n.childContainer.classList.add('collapsed');
+        n.toggle.textContent = '+';
+      }
+    }
+  });
+}
+
+function expandLevel(targetLevel) {
+  allNodes.forEach(n => {
+    if (n.childContainer && n.level <= targetLevel) {
+      n.childContainer.classList.remove('collapsed');
+      n.toggle.textContent = '\u2212';
+    }
+  });
+}
+
+const tree = document.getElementById('tree');
+data.children.forEach(c => renderTree(c, 0, tree));
+</script>
+
+</body>
+</html>

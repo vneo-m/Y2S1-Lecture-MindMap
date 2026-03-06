@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITS5505 - Lecture 1: Git & GitHub</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #f0f4f8;
+    color: #1e2a3a;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4a90d9, transparent);
+  }
+
+  .header h1 {
+    font-size: 1.6em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2270b8, #1a96c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+
+  .header .subtitle {
+    font-size: 0.85em;
+    color: #5a6a80;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px 20px 8px;
+    font-size: 0.75em;
+    color: #5a6a80;
+    flex-wrap: wrap;
+  }
+
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .node { margin: 6px 0; position: relative; }
+
+  .node-header {
+    display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px;
+    border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+    position: relative; user-select: none;
+  }
+  .node-header:hover { background: rgba(74, 144, 217, 0.09); }
+
+  .node-toggle {
+    width: 18px; height: 18px; min-width: 18px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; margin-top: 2px; transition: all 0.2s ease;
+    font-family: 'JetBrains Mono', monospace; font-weight: 500;
+  }
+
+  .node-text { flex: 1; line-height: 1.6; font-size: 0.9em; }
+
+  .node-children {
+    margin-left: 26px; border-left: 1px solid rgba(74, 144, 217, 0.22);
+    padding-left: 10px; overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+  }
+  .node-children.collapsed { max-height: 0 !important; opacity: 0; pointer-events: none; }
+
+  .level-0 > .node-header {
+    background: linear-gradient(135deg, rgba(74, 144, 217, 0.12), rgba(126, 200, 227, 0.06));
+    border: 1px solid rgba(74, 144, 217, 0.28); border-radius: 10px; margin-bottom: 4px;
+  }
+  .level-0 > .node-header .node-text { font-weight: 700; font-size: 1.05em; color: #111111; }
+  .level-0 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.2); color: #1a6fa0; }
+
+  .level-1 > .node-header .node-text { font-weight: 500; color: #222222; }
+  .level-1 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.12); color: #3a6aa0; }
+
+  .level-2 > .node-header .node-text { color: #333333; font-weight: 400; }
+  .level-2 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.08); color: #5a8ab8; }
+
+  .level-3 > .node-header .node-text { color: #555555; font-weight: 300; font-size: 0.85em; }
+  .level-3 > .node-header .node-toggle { background: rgba(74, 144, 217, 0.05); color: #4a7a9b; }
+
+  .leaf > .node-header .node-toggle { background: none; color: #aaaaaa; font-size: 6px; }
+
+  .tag {
+    display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 0.72em;
+    font-weight: 500; margin-left: 6px; vertical-align: middle;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tag-def { background: rgba(100, 60, 190, 0.09); color: #5030a0; }
+  .tag-exam { background: rgba(180, 90, 0, 0.09); color: #a05010; }
+  .tag-cmd { background: rgba(0, 140, 90, 0.09); color: #007850; }
+  .tag-tip { background: rgba(160, 110, 0, 0.09); color: #806000; }
+  .tag-warn { background: rgba(180, 30, 30, 0.09); color: #a02020; }
+
+  .controls { display: flex; justify-content: center; gap: 12px; padding: 12px 0 4px; }
+  .ctrl-btn {
+    padding: 6px 16px; border: 1px solid rgba(74, 144, 217, 0.3);
+    background: rgba(74, 144, 217, 0.08); color: #2270b8; border-radius: 6px;
+    cursor: pointer; font-size: 0.78em; font-family: 'Noto Sans SC', sans-serif; transition: all 0.2s;
+  }
+  .ctrl-btn:hover { background: rgba(74, 144, 217, 0.14); border-color: rgba(74, 144, 217, 0.4); }
+
+  strong { color: #111111; font-weight: 500; }
+  em { font-style: normal; color: #0a7aaa; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.88em; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; }
+
+  .back-btn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: white;
+    border: 1px solid rgba(74, 144, 217, 0.3);
+    border-radius: 8px;
+    color: #2270b8;
+    font-size: 0.82em;
+    font-weight: 500;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+  }
+  .back-btn:hover {
+    background: rgba(74, 144, 217, 0.08);
+    border-color: rgba(74, 144, 217, 0.5);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+  }
+</style>
+</head>
+<body>
+
+<a class="back-btn" href="../index.html">← Home</a>
+
+<div class="header">
+  <h1>Lecture 1: Version Control — Git & GitHub</h1>
+  <div class="subtitle">CITS3403/CITS5505 Agile Web Development — 思维导图</div>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#b89aff"></span>定义</span>
+  <span><span class="dot" style="background:#ffaa64"></span>重点</span>
+  <span><span class="dot" style="background:#64dcb4"></span>命令</span>
+  <span><span class="dot" style="background:#ffd64a"></span>技巧</span>
+  <span><span class="dot" style="background:#ff8a8a"></span>注意</span>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="toggleAll(true)">全部展开</button>
+  <button class="ctrl-btn" onclick="toggleAll(false)">全部折叠</button>
+  <button class="ctrl-btn" onclick="toggleAll(false); expandLevel(0); expandLevel(1);">展开两级</button>
+</div>
+
+<div class="container" id="tree"></div>
+
+<script>
+const data = {
+  text: "CITS5505 Lecture 1 \u2014 Git & GitHub",
+  children: [
+    {
+      text: "\u4e00\u3001\u7248\u672c\u63a7\u5236\u7cfb\u7edf (Version Control Systems)",
+      children: [
+        { text: "\u591a\u4eba\u534f\u540c\u5f00\u53d1\u5927\u578b\u8f6f\u4ef6\u975e\u5e38\u56f0\u96be\u2014\u2014\u5bb9\u6613\u5f15\u5165\u96be\u4ee5\u53d1\u73b0\u7684\u9519\u8bef <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "\u9700\u8981\u80fd\u529b\uff1a<em>\u89e3\u51b3\u51b2\u7a81</em> + <em>\u56de\u6eda\u53d8\u66f4</em>" },
+        { text: "<strong>\u7248\u672c\u63a7\u5236\u7cfb\u7edf (VCS)</strong>\uff1a\u7528\u4e8e\u89e3\u51b3\u534f\u540c\u5f00\u53d1\u4e2d\u51b2\u7a81\u4e0e\u56de\u6eda\u95ee\u9898\u7684\u5de5\u5177 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "\u5e38\u89c1 VCS\uff1aGit\u3001Subversion\u3001Mercurial \u7b49" },
+      ]
+    },
+    {
+      text: "\u4e8c\u3001\u4ec0\u4e48\u662f Git\uff1f(What is Git?)",
+      children: [
+        { text: "<strong>Git</strong>\uff1a\u5206\u5e03\u5f0f\u7248\u672c\u63a7\u5236\u7cfb\u7edf\uff0c2005 \u5e74\u7531 Linus Torvalds \u5f00\u53d1 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "\u5982\u4eca\u662f\u5168\u7403\u4f7f\u7528\u6700\u5e7f\u6cdb\u7684\u7248\u672c\u63a7\u5236\u7cfb\u7edf <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "\u6838\u5fc3\u529f\u80fd\uff1a\u7ba1\u7406\u4e0d\u540c\u7684<em>\u5f00\u53d1\u5206\u652f (branches)</em>\uff0c\u652f\u6301\u56de\u6eda\u548c\u72ec\u7acb\u5f00\u53d1\u529f\u80fd" },
+        { text: "Git \u7684\u5206\u652f\u534f\u4f5c\u6a21\u5f0f\u4e0e Agile \u5f00\u53d1\u5929\u7136\u5951\u5408 <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+      ]
+    },
+    {
+      text: "\u4e09\u3001\u8bbe\u7f6e Git \u9879\u76ee (Setting up a Git Project)",
+      children: [
+        { text: "\u6bcf\u4e2a Git \u9879\u76ee\u90fd\u5728\u4e00\u4e2a <em>repository (\u4ed3\u5e93)</em> \u4e2d\u5f00\u53d1" },
+        { text: "\u521d\u59cb\u5316\u65b0\u4ed3\u5e93\uff1a<code>git init</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u514b\u9686\u5df2\u6709\u4ed3\u5e93\uff1a<code>git clone usr@url:path</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>", children: [
+          { text: "\u514b\u9686\u540e\u4f1a\u521b\u5efa\u8fdc\u7a0b\u4ed3\u5e93\u6240\u6709\u6587\u4ef6\u548c\u5386\u53f2\u7684\u672c\u5730\u526f\u672c" },
+        ]},
+        { text: "\u7406\u8bba\u4e0a Git \u9879\u76ee\u5b8c\u5168\u53bb\u4e2d\u5fc3\u5316\u2014\u2014\u514b\u9686\u4f53\u4e0e\u6e90\u4ed3\u5e93\u65e0\u6cd5\u533a\u5206" },
+        { text: "\u4f46\u5b9e\u8df5\u4e2d\u901a\u5e38\u6709\u4e00\u4e2a\u4ed3\u5e93\u88ab\u89c6\u4e3a\u9879\u76ee\u7684\u300c\u771f\u5b9e\u72b6\u6001\u300d <span class='tag tag-tip'>\u6280\u5de7</span>" },
+      ]
+    },
+    {
+      text: "\u56db\u3001Git \u9879\u76ee\u7ed3\u6784 (Git Project Structure)",
+      children: [
+        { text: "\u9879\u76ee\u5386\u53f2\u662f\u4e00\u4e2a<em>\u56fe (graph)</em>\u7ed3\u6784\uff0c\u4e0d\u662f\u7ebf\u6027\u7684\uff01 <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "<strong>Commit (\u63d0\u4ea4)</strong>\uff1a\u56fe\u4e2d\u7684\u6bcf\u4e2a\u8282\u70b9\uff0c\u4ee3\u8868\u4e00\u7ec4\u4ee3\u7801\u53d8\u66f4 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<strong>Commit ID</strong>\uff1a\u6bcf\u4e2a\u63d0\u4ea4\u6709\u552f\u4e00\u7684\u54c8\u5e0c\u6807\u8bc6\uff0c\u5982 <code>d259f048...</code>" },
+        { text: "<strong>Branch (\u5206\u652f)</strong>\uff1a\u4e00\u7ec4\u8fde\u7eed\u7684\u63d0\u4ea4\u5e8f\u5217 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "<strong>HEAD</strong>\uff1a\u6307\u5411\u5f53\u524d\u6240\u5728\u7684\u5206\u652f <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+      ]
+    },
+    {
+      text: "\u4e94\u3001\u6dfb\u52a0\u65b0\u63d0\u4ea4 (Adding New Commits)",
+      children: [
+        { text: "\u5de5\u4f5c\u6d41\u7a0b", children: [
+          { text: "1. (\u53ef\u9009) \u67e5\u770b\u4fee\u6539\u7684\u6587\u4ef6\uff1a<code>git status</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+          { text: "2. \u5c06\u6587\u4ef6\u6dfb\u52a0\u5230\u6682\u5b58\u533a\uff1a<code>git add &lt;filename&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+          { text: "3. \u5b8c\u6210\u63d0\u4ea4\uff1a<code>git commit -m &quot;msg&quot;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        ]},
+        { text: "\u6ce8\u610f\uff1a\u8fd9\u4e9b\u547d\u4ee4\u53ea\u5728<em>\u672c\u5730\u4ed3\u5e93</em>\u6dfb\u52a0\u63d0\u4ea4\uff0c\u4e0d\u4f1a\u540c\u6b65\u5230\u5176\u4ed6\u526f\u672c\uff01 <span class='tag tag-warn'>\u6ce8\u610f</span>" },
+        { text: "\u6bcf\u4e2a\u63d0\u4ea4\u90fd\u53ef\u4ee5\u64a4\u9500\u548c\u91cd\u653e" },
+      ]
+    },
+    {
+      text: "\u516d\u3001\u63d0\u4ea4\u4fe1\u606f\u7684\u827a\u672f (The Art of Commit Messages)",
+      children: [
+        { text: "\u597d\u7684\u63d0\u4ea4\u4fe1\u606f\u5e94\u540c\u65f6\u63cf\u8ff0<em>\u6539\u4e86\u4ec0\u4e48</em>\u548c<em>\u4e3a\u4ec0\u4e48\u6539</em> <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "\u793a\u4f8b\u5bf9\u6bd4 <span class='tag tag-tip'>\u6280\u5de7</span>", children: [
+          { text: "\u5dee\uff1aUpdated login page" },
+          { text: "\u4e00\u822c\uff1aUpdated margins on login box" },
+          { text: "\u597d\uff1aUpdated margins on login box to prevent it overlapping with logo" },
+        ]},
+        { text: "\u5199\u597d\u63d0\u4ea4\u4fe1\u606f\u662f\u4e00\u95e8\u827a\u672f\uff01" },
+      ]
+    },
+    {
+      text: "\u4e03\u3001\u5206\u652f\u7ba1\u7406 (Managing Branches)",
+      children: [
+        { text: "\u521b\u5efa\u65b0\u5206\u652f\uff1a<code>git checkout -b &lt;branchName&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u5207\u6362\u5206\u652f\uff1a<code>git checkout &lt;branchName&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u5220\u9664\u5206\u652f\uff1a<code>git branch -d &lt;branchName&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u6bd4\u8f83\u4e24\u4e2a\u5206\u652f\uff1a<code>git diff &lt;b1&gt; &lt;b2&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+      ]
+    },
+    {
+      text: "\u516b\u3001\u5408\u5e76\u5206\u652f (Merging Branches)",
+      children: [
+        { text: "\u5206\u652f\u4e0d\u80fd\u6c38\u8fdc\u5206\u53c9\u4e0b\u53bb\uff0c\u6700\u7ec8\u9700\u8981\u5408\u5e76" },
+        { text: "\u5408\u5e76\u547d\u4ee4\uff1a<code>git merge &lt;branchName&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u6bcf\u4e2a\u9879\u76ee\u6709\u4e00\u4e2a <em>main/master</em> \u5206\u652f\u4f5c\u4e3a\u9879\u76ee\u7684\u300c\u5f53\u524d\u72b6\u6001\u300d <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "\u65b0\u529f\u80fd\u5728\u72ec\u7acb\u5206\u652f\u4e0a\u5f00\u53d1\uff0c\u5b8c\u6210\u540e\u5408\u5e76\u56de main \u5206\u652f" },
+      ]
+    },
+    {
+      text: "\u4e5d\u3001Git \u6807\u7b7e (Git Tags)",
+      children: [
+        { text: "\u4e3a\u91cd\u8981\u63d0\u4ea4\u6253\u6807\u7b7e\uff08\u5982\u516c\u5f00\u53d1\u5e03\u3001\u65b0\u529f\u80fd\u5b8c\u6210\u7b49\uff09" },
+        { text: "\u521b\u5efa\u6807\u7b7e\uff1a<code>git tag &lt;tagname&gt; &lt;commitId&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u68c0\u51fa\u6807\u7b7e\uff1a<code>git checkout &lt;tagname&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+      ]
+    },
+    {
+      text: "\u5341\u3001\u8fdc\u7a0b\u4ed3\u5e93 (Remote Repositories)",
+      children: [
+        { text: "\u4f60\u7684\u63d0\u4ea4\u56fe\u548c\u522b\u4eba\u7684\u4e0d\u540c\u2014\u2014\u9700\u8981\u4e0e\u4ed6\u4eba\u540c\u6b65\uff01 <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "<strong>Remotes</strong>\uff1a\u4e0e\u4f60\u4ea4\u4e92\u7684\u5176\u4ed6\u4ed3\u5e93\u526f\u672c <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "\u514b\u9686\u4ed3\u5e93\u65f6\u9ed8\u8ba4\u6dfb\u52a0\u540d\u4e3a <em>origin</em> \u7684\u8fdc\u7a0b" },
+        { text: "\u6dfb\u52a0\u8fdc\u7a0b\uff1a<code>git remote add &lt;name&gt; &lt;url&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+      ]
+    },
+    {
+      text: "\u5341\u4e00\u3001\u63a8\u9001\u4e0e\u62c9\u53d6 (Push & Pull)",
+      children: [
+        { text: "\u63a8\u9001\u672c\u5730\u5206\u652f\u5230\u8fdc\u7a0b\uff1a<code>git push &lt;remoteName&gt; &lt;branchName&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u4ece\u8fdc\u7a0b\u62c9\u53d6\u66f4\u65b0\uff1a<code>git pull &lt;remoteName&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "<strong>\u6807\u51c6\u5f00\u53d1\u5de5\u4f5c\u6d41</strong> <span class='tag tag-exam'>\u91cd\u70b9</span>", children: [
+          { text: "<code>git checkout main</code> \u2192 \u5207\u5230\u4e3b\u5206\u652f" },
+          { text: "<code>git pull origin</code> \u2192 \u62c9\u53d6\u6700\u65b0\u4ee3\u7801" },
+          { text: "<code>git checkout -b newFeature</code> \u2192 \u521b\u5efa\u529f\u80fd\u5206\u652f" },
+          { text: "\u2026\u5f00\u53d1\u2026" },
+          { text: "<code>git commit -m &quot;msg&quot;</code> \u2192 \u63d0\u4ea4\u53d8\u66f4" },
+          { text: "<code>git merge main</code> \u2192 \u5408\u5e76\u4e3b\u5206\u652f\u53d8\u66f4" },
+          { text: "<code>git push origin main</code> \u2192 \u63a8\u9001\u5230\u8fdc\u7a0b" },
+        ]},
+      ]
+    },
+    {
+      text: "\u5341\u4e8c\u3001\u5408\u5e76\u51b2\u7a81 (Merge Conflicts)",
+      children: [
+        { text: "\u4e0d\u540c\u5206\u652f\u4fee\u6539\u4e86\u540c\u4e00\u884c\u4ee3\u7801\u65f6\uff0c\u5408\u5e76\u4f1a\u4ea7\u751f<em>\u51b2\u7a81</em> <span class='tag tag-warn'>\u6ce8\u610f</span>" },
+        { text: "\u89e3\u51b3\u65b9\u6cd5\uff1a\u624b\u52a8\u4fee\u590d\u51b2\u7a81\u6587\u4ef6 \u2192 <code>git add &lt;filename&gt;</code> \u2192 <code>git merge --continue</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "Git \u53ea\u68c0\u6d4b<em>\u8bed\u6cd5\u51b2\u7a81</em>\uff08\u540c\u4e00\u884c\u88ab\u4fee\u6539\uff09\uff0c\u4e0d\u68c0\u6d4b<em>\u8bed\u4e49\u51b2\u7a81</em>\uff08\u884c\u4e3a\u53d8\u5316\uff09 <span class='tag tag-exam'>\u91cd\u70b9</span>" },
+        { text: "\u907f\u514d\u51b2\u7a81\u7684\u65b9\u6cd5 <span class='tag tag-tip'>\u6280\u5de7</span>", children: [
+          { text: "\u4fdd\u6301\u63d0\u4ea4\u7c92\u5ea6\u5408\u7406\uff08\u9650\u4e8e\u5355\u4e2a\u529f\u80fd\u6216 bug \u4fee\u590d\uff09" },
+          { text: "\u9891\u7e41\u5408\u5e76" },
+          { text: "\u8bed\u4e49\u51b2\u7a81\u9700\u8981\u6d4b\u8bd5\u6765\u53d1\u73b0\uff01" },
+        ]},
+      ]
+    },
+    {
+      text: "\u5341\u4e09\u3001Git \u5de5\u5177 (Git Utilities)",
+      children: [
+        { text: "\u67e5\u770b\u63d0\u4ea4\u5386\u53f2\uff1a<code>git log</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u56de\u6eda\u672a\u63d0\u4ea4\u7684\u6587\u4ef6\u66f4\u6539\uff1a<code>git checkout &lt;fileName&gt;</code> <span class='tag tag-cmd'>\u547d\u4ee4</span>" },
+        { text: "\u73b0\u4ee3 IDE\uff08\u5982 VSCode\uff09\u5185\u7f6e Git GUI\uff1b\u4e5f\u6709\u72ec\u7acb\u5de5\u5177\u5982 Git Kraken" },
+      ]
+    },
+    {
+      text: "\u5341\u56db\u3001GitHub",
+      children: [
+        { text: "<strong>GitHub</strong>\uff1a\u6258\u7ba1 Git \u4ed3\u5e93\u7684\u670d\u52a1\u5e73\u53f0 <span class='tag tag-def'>\u5b9a\u4e49</span>" },
+        { text: "\u652f\u6301\u516c\u6709\u548c\u79c1\u6709\u4ed3\u5e93" },
+        { text: "\u7c7b\u4f3c\u670d\u52a1\uff1aBitbucket (Atlassian) \u7b49" },
+      ]
+    },
+    {
+      text: "\u5341\u4e94\u3001GitHub \u7684 Agile \u9879\u76ee\u7ba1\u7406",
+      children: [
+        { text: "\u56e2\u961f\u901a\u8fc7 push/pull \u4e0e GitHub \u4ed3\u5e93\u540c\u6b65" },
+        { text: "<strong>Issues</strong> \u2014 \u8ddf\u8e2a\u548c\u8ba8\u8bba\u529f\u80fd\u5217\u8868 <span class='tag tag-exam'>\u91cd\u70b9</span>", children: [
+          { text: "\u65b0\u529f\u80fd Issue\uff1a\u63cf\u8ff0\u76ee\u7684 + \u5b9e\u73b0\u65b9\u6848" },
+          { text: "Bug \u62a5\u544a Issue\uff1a\u63cf\u8ff0\u9884\u671f\u884c\u4e3a vs \u5b9e\u9645\u884c\u4e3a + \u590d\u73b0\u6b65\u9aa4 + \u53ef\u80fd\u539f\u56e0" },
+          { text: "Issue \u5e94\u5305\u542b\u8db3\u591f\u7ec6\u8282\uff0c\u8ba9\u56e2\u961f\u4e2d\u4efb\u4f55\u4eba\u90fd\u80fd\u5904\u7406 <span class='tag tag-tip'>\u6280\u5de7</span>" },
+          { text: "Issue \u4e5f\u662f\u8ba8\u8bba\u533a\uff0c\u56e2\u961f\u6210\u5458\u53ef\u4ee5\u8bc4\u8bba\u548c\u8ba8\u8bba" },
+        ]},
+        { text: "<strong>Pull Requests (PR)</strong> \u2014 \u4ee3\u7801\u5ba1\u67e5 <span class='tag tag-exam'>\u91cd\u70b9</span>", children: [
+          { text: "\u4e0d\u76f4\u63a5\u5728\u672c\u5730\u5408\u5e76\u5230 main \u540e\u63a8\u9001\uff0c\u800c\u662f\u63a8\u9001\u5206\u652f\u5e76\u5f00 PR" },
+          { text: "\u5176\u4ed6\u4eba\u53ef\u4ee5\u67e5\u770b\u4ee3\u7801\u53d8\u66f4\u3001\u6dfb\u52a0\u8bc4\u8bba\u548c\u5efa\u8bae" },
+          { text: "\u53ef\u4ee5\u901a\u8fc7\u6dfb\u52a0\u65b0\u63d0\u4ea4\u6765\u54cd\u5e94\u53cd\u9988" },
+          { text: "\u6240\u6709\u4eba\u6ee1\u610f\u540e\u70b9\u51fb Merge \u6309\u94ae\u5b8c\u6210\u5408\u5e76" },
+        ]},
+        { text: "\u5176\u4ed6 GitHub \u529f\u80fd", children: [
+          { text: "<strong>Releases</strong>\uff1a\u6807\u8bb0\u8f6f\u4ef6\u65b0\u7248\u672c" },
+          { text: "<strong>GitHub Actions</strong>\uff1a\u81ea\u52a8\u8fd0\u884c\u6d4b\u8bd5\u3001\u81ea\u52a8\u90e8\u7f72" },
+          { text: "<strong>README.md</strong>\uff1a\u7528 Markdown \u7f16\u5199\u7684\u9879\u76ee\u8bf4\u660e\u6587\u4ef6\uff0cGitHub \u81ea\u52a8\u6e32\u67d3\u5728\u4ed3\u5e93\u9996\u9875" },
+        ]},
+      ]
+    },
+  ]
+};
+
+let allNodes = [];
+
+function renderTree(node, level, parentEl) {
+  const div = document.createElement('div');
+  div.className = `node level-${level}` + (node.children ? '' : ' leaf');
+
+  const header = document.createElement('div');
+  header.className = 'node-header';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'node-toggle';
+  toggle.textContent = node.children ? '\u2212' : '\u2022';
+
+  const text = document.createElement('span');
+  text.className = 'node-text';
+  text.innerHTML = node.text;
+
+  header.appendChild(toggle);
+  header.appendChild(text);
+  div.appendChild(header);
+
+  let childContainer = null;
+  if (node.children) {
+    childContainer = document.createElement('div');
+    childContainer.className = 'node-children';
+    node.children.forEach(c => renderTree(c, level + 1, childContainer));
+    div.appendChild(childContainer);
+
+    header.addEventListener('click', () => {
+      const collapsed = childContainer.classList.toggle('collapsed');
+      toggle.textContent = collapsed ? '+' : '\u2212';
+    });
+  }
+
+  allNodes.push({ div, childContainer, toggle, level });
+  parentEl.appendChild(div);
+}
+
+function toggleAll(expand) {
+  allNodes.forEach(n => {
+    if (n.childContainer) {
+      if (expand) {
+        n.childContainer.classList.remove('collapsed');
+        n.toggle.textContent = '\u2212';
+      } else {
+        n.childContainer.classList.add('collapsed');
+        n.toggle.textContent = '+';
+      }
+    }
+  });
+}
+
+function expandLevel(targetLevel) {
+  allNodes.forEach(n => {
+    if (n.childContainer && n.level <= targetLevel) {
+      n.childContainer.classList.remove('collapsed');
+      n.toggle.textContent = '\u2212';
+    }
+  });
+}
+
+const tree = document.getElementById('tree');
+data.children.forEach(c => renderTree(c, 0, tree));
+</script>
+
+</body>
+</html>

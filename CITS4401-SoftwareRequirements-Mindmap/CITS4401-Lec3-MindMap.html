@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CITS4401 - Lecture 3: Requirements Analysis & Use Cases</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #f0f4f8;
+    color: #1e2a3a;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4a90d9, transparent);
+  }
+
+  .header h1 {
+    font-size: 1.6em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2270b8, #1a96c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+
+  .header .subtitle {
+    font-size: 0.85em;
+    color: #5a6a80;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px 20px 8px;
+    font-size: 0.75em;
+    color: #5a6a80;
+    flex-wrap: wrap;
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  .node {
+    margin: 6px 0;
+    position: relative;
+  }
+
+  .node-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+  }
+
+  .node-header:hover {
+    background: rgba(74, 144, 217, 0.09);
+  }
+
+  .node-toggle {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    margin-top: 2px;
+    transition: all 0.2s ease;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  .node-text {
+    flex: 1;
+    line-height: 1.6;
+    font-size: 0.9em;
+  }
+
+  .node-children {
+    margin-left: 26px;
+    border-left: 1px solid rgba(74, 144, 217, 0.22);
+    padding-left: 10px;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+  }
+
+  .node-children.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .level-0 > .node-header {
+    background: linear-gradient(135deg, rgba(74, 144, 217, 0.12), rgba(126, 200, 227, 0.06));
+    border: 1px solid rgba(74, 144, 217, 0.28);
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+
+  .level-0 > .node-header .node-text {
+    font-weight: 700;
+    font-size: 1.05em;
+    color: #111111;
+  }
+
+  .level-0 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.2);
+    color: #1a6fa0;
+  }
+
+  .level-1 > .node-header .node-text {
+    font-weight: 500;
+    color: #222222;
+  }
+
+  .level-1 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.12);
+    color: #3a6aa0;
+  }
+
+  .level-2 > .node-header .node-text {
+    color: #333333;
+    font-weight: 400;
+  }
+
+  .level-2 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.08);
+    color: #5a8ab8;
+  }
+
+  .level-3 > .node-header .node-text {
+    color: #555555;
+    font-weight: 300;
+    font-size: 0.85em;
+  }
+
+  .level-3 > .node-header .node-toggle {
+    background: rgba(74, 144, 217, 0.05);
+    color: #4a7a9b;
+  }
+
+  .leaf > .node-header .node-toggle {
+    background: none;
+    color: #aaaaaa;
+    font-size: 6px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 0.72em;
+    font-weight: 500;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-def { background: rgba(100, 60, 190, 0.09); color: #5030a0; }
+  .tag-exam { background: rgba(180, 90, 0, 0.09); color: #a05010; }
+  .tag-eg { background: rgba(0, 140, 90, 0.09); color: #007850; }
+  .tag-tip { background: rgba(160, 110, 0, 0.09); color: #806000; }
+  .tag-warn { background: rgba(180, 30, 30, 0.09); color: #a02020; }
+  .tag-key { background: rgba(0, 90, 160, 0.09); color: #005090; }
+  .tag-uml { background: rgba(50, 50, 50, 0.08); color: #444444; }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 0 4px;
+  }
+
+  .ctrl-btn {
+    padding: 6px 16px;
+    border: 1px solid rgba(74, 144, 217, 0.3);
+    background: rgba(74, 144, 217, 0.08);
+    color: #2270b8;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78em;
+    font-family: 'Noto Sans SC', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .ctrl-btn:hover {
+    background: rgba(74, 144, 217, 0.14);
+    border-color: rgba(74, 144, 217, 0.4);
+  }
+
+  strong { color: #111111; font-weight: 500; }
+  em { font-style: normal; color: #0a7aaa; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.88em; background: rgba(0,0,0,0.04); padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CITS4401: Software Requirements & Design — Lecture 3</h1>
+  <div class="subtitle">Requirements Analysis & Use Cases — 思维导图</div>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#b89aff"></span>定义</span>
+  <span><span class="dot" style="background:#ffaa64"></span>考试重点</span>
+  <span><span class="dot" style="background:#64dcb4"></span>示例</span>
+  <span><span class="dot" style="background:#ffd64a"></span>实用建议</span>
+  <span><span class="dot" style="background:#ff8a8a"></span>警告</span>
+  <span><span class="dot" style="background:#4a90d9"></span>关键概念</span>
+  <span><span class="dot" style="background:#888888"></span>UML</span>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="toggleAll(true)">全部展开</button>
+  <button class="ctrl-btn" onclick="toggleAll(false)">全部折叠</button>
+  <button class="ctrl-btn" onclick="toggleAll(false); expandLevel(0); expandLevel(1);">展开两级</button>
+</div>
+
+<div class="container" id="tree"></div>
+
+<script>
+const data = {
+  text: "CITS4401 Lecture 3：需求分析与用例 (Requirements Analysis & Use Cases)",
+  children: [
+    {
+      text: "一、需求工程的四大核心活动 (4 Major Activities)",
+      tag: "key",
+      children: [
+        { text: "<strong>Elicitation（获取）</strong>：从利益相关者处收集需求", tag: "def" },
+        { text: "<strong>Analysis（分析）</strong>：本讲重点 — 理解、分类、优先排序需求", tag: "exam" },
+        { text: "<strong>Specification（规格说明）</strong>：正式文档化需求", tag: "def" },
+        { text: "<strong>Validation（验证）</strong>：确认需求正确且完整", tag: "def" }
+      ]
+    },
+    {
+      text: "二、需求类型 (Types of Requirements)",
+      tag: "key",
+      children: [
+        {
+          text: "<strong>功能需求 (Functional Requirements)</strong>",
+          tag: "def",
+          children: [
+            { text: "描述系统<em>应执行的功能</em>", tag: "def" },
+            { text: "<strong>示例</strong>：The SW shall enable a student to enroll in a class", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>非功能需求 (Non-functional Requirements)</strong>",
+          tag: "def",
+          children: [
+            { text: "约束解决方案的需求，而非描述功能本身", tag: "def" },
+            {
+              text: "主要类别",
+              children: [
+                { text: "<strong>Performance（性能）</strong>：如响应时间、吞吐量", tag: "eg" },
+                { text: "<strong>Maintainability（可维护性）</strong>：如使用现代编程实践", tag: "eg" },
+                { text: "<strong>Safety（安全性）</strong>：如传感器阈值超限后1秒内切换安全状态", tag: "eg" },
+                { text: "<strong>Reliability（可靠性）</strong>：如与同类生产力工具一样可用", tag: "eg" },
+                { text: "<strong>Security（安全防护）</strong>：如防止XXX渗透攻击", tag: "eg" },
+                { text: "<strong>Privacy（隐私）</strong>：如密码保护用户账户", tag: "eg" },
+                { text: "<strong>Interoperability（互操作性）</strong>：如运行于Android 16手机", tag: "eg" },
+                { text: "<strong>Useability（可用性）</strong>：如符合ISO 9241可用性标准", tag: "eg" }
+              ]
+            },
+            { text: "<strong>示例</strong>：学生地址及个人信息不得向未授权方披露", tag: "eg" }
+          ]
+        }
+      ]
+    },
+    {
+      text: "三、需求分类维度 (More Requirements Classifications)",
+      tag: "key",
+      children: [
+        {
+          text: "<strong>需求优先级 (Requirement Priority)</strong>",
+          tag: "exam",
+          children: [
+            { text: "优先级越高 → 对实现总体目标越关键", tag: "def" },
+            { text: "常用 <strong>MoSCoW</strong> 方法：Must have / Should have / Could have / Won&#39;t have", tag: "key" },
+            { text: "MoSCoW 优势：大量需求（如1000条）时，分组比逐条排序容易得多", tag: "tip" },
+            { text: "将需求分为 <em>DO list</em>（必做）与 <em>NOT DO list</em>（不做）两组", tag: "tip" }
+          ]
+        },
+        {
+          text: "<strong>需求范围 (Requirement Scope)</strong>",
+          tag: "def",
+          children: [
+            { text: "需求影响软件系统及其组件的范围", tag: "def" },
+            { text: "非功能需求（如响应时间）通常具有<em>全局范围</em>，不能分配给单一组件", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>需求易变性 (Requirement Volatility)</strong>",
+          tag: "def",
+          children: [
+            { text: "评估需求在开发期间或系统生命周期内发生变化的可能性", tag: "def" },
+            { text: "帮助开发者设计对变化更具容忍性的架构", tag: "tip" }
+          ]
+        }
+      ]
+    },
+    {
+      text: "四、需求视角 (Viewpoints of Requirements)",
+      tag: "key",
+      children: [
+        {
+          text: "<strong>交互者视角 (Interactor Viewpoints)</strong>",
+          tag: "def",
+          children: [
+            { text: "直接与系统交互的人或其他系统", tag: "def" },
+            { text: "<strong>示例</strong>：ATM客户、银行数据库", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>间接视角 (Indirect Viewpoints)</strong>",
+          tag: "def",
+          children: [
+            { text: "不直接使用系统，但对需求有影响的利益相关者", tag: "def" },
+            { text: "<strong>示例</strong>：银行管理层、安全人员", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>领域视角 (Domain Viewpoints)</strong>",
+          tag: "def",
+          children: [
+            { text: "领域本身的约束对需求产生影响", tag: "def" },
+            { text: "<strong>示例</strong>：银行间通信标准", tag: "eg" }
+          ]
+        }
+      ]
+    },
+    {
+      text: "五、需求谈判与冲突解决 (Requirements Negotiation)",
+      tag: "key",
+      children: [
+        {
+          text: "<strong>冲突/谈判 (Conflict / Negotiation)</strong>",
+          tag: "exam",
+          children: [
+            { text: "又称<em>冲突解决（Conflict Resolution）</em>", tag: "def" },
+            {
+              text: "冲突来源",
+              children: [
+                { text: "两个利益相关者要求<em>互不兼容</em>的功能", tag: "warn" },
+                { text: "需求与资源之间的冲突", tag: "warn" },
+                { text: "功能需求与非功能需求之间的冲突", tag: "warn" }
+              ]
+            },
+            { text: "软件工程师通常<em>不应单方面</em>做决定，须与利益相关者协商达成共识", tag: "tip" },
+            { text: "出于<em>合同原因</em>，此类决定需<em>可追溯</em>回客户", tag: "warn" }
+          ]
+        },
+        {
+          text: "<strong>谈判的价值 (Why Negotiation?)</strong>",
+          children: [
+            { text: "促进沟通（Encourages communication）", tag: "tip" },
+            { text: "帮助理解（Aids in understanding）", tag: "tip" },
+            { text: "揭示冲突、探索方案、协同解决（Collaborative resolution）", tag: "tip" },
+            { text: "提升一致性（Improves agreement level）", tag: "tip" },
+            { text: "提高利益相关者满意度（Stakeholder satisfaction）", tag: "tip" },
+            { text: "提升需求质量（Improves requirements quality）", tag: "tip" }
+          ]
+        },
+        {
+          text: "<strong>检测冲突的三种策略及其弱点</strong>",
+          tag: "exam",
+          children: [
+            { text: "策略1：使用优先级排序（Order of Priority）", tag: "key" },
+            { text: "策略2：MoSCoW 分类法", tag: "key" },
+            { text: "策略3：形式化方法（Formal Methods）— 构建数学模型，使用1阶逻辑、集合论(Z)、时序逻辑、状态机", tag: "key" },
+            {
+              text: "<strong>三种策略共同弱点</strong>",
+              tag: "warn",
+              children: [
+                { text: "假设需求是独立的，但实际上并非如此", tag: "warn" },
+                { text: "客户可能不清楚自己的优先级", tag: "warn" },
+                { text: "不同利益相关者往往对优先级意见不一", tag: "warn" }
+              ]
+            }
+          ]
+        },
+        {
+          text: "<strong>敏捷开发中的谈判 (Agile Negotiation)</strong>",
+          children: [
+            { text: "传统方法：聚焦揭示冲突、加深需求理解", tag: "def" },
+            { text: "敏捷方法：客户参与并<em>持续提供和优先排序新需求</em>", tag: "key" },
+            { text: "谈判重点：需求能否在时间/预算内实现？能否排定优先级？", tag: "tip" },
+            { text: "合同模式：客户为<em>时间成本</em>付费，而非特定需求集的交付", tag: "def" },
+            { text: "开发者须<em>现实承诺</em>，不要为签合同而过度承诺", tag: "warn" }
+          ]
+        }
+      ]
+    },
+    {
+      text: "六、可行性研究 (Feasibility Studies)",
+      tag: "key",
+      children: [
+        {
+          text: "<strong>输入 (Input)</strong>",
+          children: [
+            { text: "初步业务需求集合", tag: "def" },
+            { text: "系统概要描述", tag: "def" },
+            { text: "系统预期如何支持业务流程", tag: "def" }
+          ]
+        },
+        {
+          text: "<strong>输出 (Output)</strong>",
+          children: [
+            { text: "一份建议报告：是否值得继续推进需求工程和系统开发", tag: "def" }
+          ]
+        },
+        {
+          text: "<strong>可行性研究需回答的三个核心问题</strong>",
+          tag: "exam",
+          children: [
+            { text: "该系统是否符合组织的<em>总体目标</em>？", tag: "key" },
+            { text: "能否用<em>当前技术</em>在给定成本和进度约束内实现该系统？", tag: "key" },
+            { text: "该系统能否与<em>现有系统</em>集成？", tag: "key" }
+          ]
+        }
+      ]
+    },
+    {
+      text: "七、需求演化 (Requirements Evolution)",
+      tag: "key",
+      children: [
+        {
+          text: "<strong>需求变更的原因</strong>",
+          tag: "exam",
+          children: [
+            { text: "用户通过需求获取/分析/验证过程对需求有了更深理解", tag: "def" },
+            { text: "软件系统引入后带来了新的工作方式", tag: "def" },
+            { text: "组织<em>外部环境</em>变化", tag: "def" },
+            { text: "组织<em>内部系统或流程</em>变化", tag: "def" },
+            { text: "开发本身是一个<em>发现过程</em>", tag: "key" }
+          ]
+        },
+        {
+          text: "<strong>需求变更的后果</strong>",
+          tag: "warn",
+          children: [
+            { text: "成本增加 → 导致争议", tag: "warn" },
+            { text: "延期/进度延误 → 导致争议", tag: "warn" },
+            { text: "成本增加+延期 → 非常严重，可能诉诸法律", tag: "warn" },
+            { text: "破坏客户信任 → 非常严重，可能失去后续合同", tag: "warn" },
+            { text: "严重性取决于变更发生在生命周期的<em>哪个阶段</em>（越晚越严重）", tag: "key" }
+          ]
+        },
+        {
+          text: "<strong>两类需求 (Two Classes)</strong>",
+          tag: "def",
+          children: [
+            {
+              text: "<strong>持久需求 (Enduring Requirements)</strong>",
+              children: [
+                { text: "源于组织的核心业务活动", tag: "def" },
+                { text: "直接与问题领域相关", tag: "def" },
+                { text: "相对稳定", tag: "def" }
+              ]
+            },
+            {
+              text: "<strong>易变需求 (Volatile Requirements)</strong>",
+              children: [
+                { text: "源于系统所处的外部环境", tag: "def" },
+                { text: "在开发过程中或之后可能发生变化", tag: "warn" }
+              ]
+            }
+          ]
+        },
+        {
+          text: "<strong>需求演化管理技术</strong>",
+          tag: "tip",
+          children: [
+            { text: "<strong>SCM</strong>（软件配置管理，Software Configuration Management）", tag: "def" },
+            { text: "<strong>可追溯表 (Traceability Tables)</strong>：为每条需求唯一编号，并记录特征、来源、依赖关系、子系统、接口等维度", tag: "key" },
+            { text: "<strong>良好的记录保存 (Good Record Keeping)</strong>", tag: "tip" },
+            { text: "<strong>度量指标 (Metrics)</strong>", tag: "tip" }
+          ]
+        }
+      ]
+    },
+    {
+      text: "八、概念建模 (Conceptual Modelling)",
+      tag: "key",
+      children: [
+        { text: "对真实世界问题建立模型是<em>软件需求分析的核心</em>", tag: "def" },
+        { text: "目的：帮助理解问题发生的情境，并描绘解决方案", tag: "def" },
+        { text: "概念模型由<em>问题领域中的实体模型</em>组成，体现其真实世界的关系与依赖", tag: "def" },
+        { text: "来源：SWBOK c1.1 Section 4.2", tag: "tip" }
+      ]
+    },
+    {
+      text: "九、架构设计与需求分配 (Architectural Design & Requirements Allocation)",
+      tag: "key",
+      children: [
+        { text: "在某个时间点，必须导出<em>解决方案架构</em>", tag: "def" },
+        { text: "架构设计是需求过程与软件/系统设计<em>重叠</em>的节点", tag: "key" },
+        { text: "两者几乎<em>不可能完全解耦</em>——分析需求的过程本身就要求识别负责满足需求的架构/设计组件", tag: "warn" },
+        { text: "来源：SWBoK Ch 1 Section 4.3", tag: "tip" }
+      ]
+    },
+    {
+      text: "十、用例图 (Use Case Diagrams)",
+      tag: "uml",
+      children: [
+        { text: "UML 符号，从<em>用户视角</em>描述系统功能", tag: "def" },
+        { text: "描述内容：参与者及其目标、系统边界（范围内与范围外）、用例名称", tag: "key" },
+        { text: "<strong>椭圆</strong>代表用例，<strong>火柴人</strong>代表参与者（人或外部系统），<strong>连线</strong>代表交互关系", tag: "uml" },
+        { text: "提供系统的<em>高层全景图</em>，每个用例代表一大块将被实现的功能", tag: "tip" },
+        {
+          text: "<strong>参与者 (Actors)</strong>",
+          tag: "def",
+          children: [
+            { text: "与系统交互的<em>外部实体</em>", tag: "def" },
+            { text: "可以是用户角色（user role）", tag: "def" },
+            { text: "可以是<em>使用</em>当前系统的另一个系统（注意：被当前系统调用的系统<em>不是</em>参与者）", tag: "warn" },
+            { text: "参与者有唯一名称和描述，以及须被系统满足的<em>目标</em>", tag: "def" }
+          ]
+        },
+        {
+          text: "<strong>示例：SimpleWatch（简单手表）</strong>",
+          tag: "eg",
+          children: [
+            { text: "参与者：WatchUser、WatchRepairPerson", tag: "eg" },
+            { text: "用例：ReadTime、SetTime、ChangeBattery", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>示例：FRIEND 事故管理系统</strong>",
+          tag: "eg",
+          children: [
+            { text: "First Responder Interactive Emergency Navigational Database", tag: "def" },
+            { text: "参与者：FieldOfficer（现场警官）、Dispatcher（调度员）", tag: "eg" },
+            { text: "用例：ReportEmergency、OpenIncident、AllocateResources", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>示例：课程注册系统 (Course Registration)</strong>",
+          tag: "eg",
+          children: [
+            { text: "参与者：Student、Professor、Registrar、Course Catalog System", tag: "eg" },
+            { text: "用例：Register for Courses、Select Courses to Teach、Close Registration", tag: "eg" }
+          ]
+        },
+        { text: "常用工具：<code>https://app.diagrams.net/</code>（draw.io）", tag: "tip" }
+      ]
+    },
+    {
+      text: "十一、UML 用例 (UML Use Cases)",
+      tag: "uml",
+      children: [
+        {
+          text: "<strong>术语辨析</strong>",
+          tag: "exam",
+          children: [
+            { text: "<strong>Use Case Diagram（用例图）</strong>：参与者与命名用例的高层汇总图", tag: "def" },
+            { text: "<strong>UML Use Case（UML用例）</strong>：描述用户与系统之间一次完整交互的详细文档", tag: "def" },
+            { text: "<strong>Scenario（场景）</strong>：用例的一个具体实例（use case的instance）", tag: "def" },
+            { text: "Use case = 由<em>共同用户目标</em>串联起来的多个场景的抽象", tag: "key" }
+          ]
+        },
+        {
+          text: "<strong>场景 vs. 用例 (Scenario vs. Use Case)</strong>",
+          tag: "def",
+          children: [
+            { text: "场景：描述用户与系统交互的步骤序列；用于收集故事、构建需求；关注<em>可理解性</em>", tag: "def" },
+            { text: "用例：对涉及该功能的<em>多个可能场景</em>的抽象", tag: "def" }
+          ]
+        },
+        {
+          text: "<strong>为什么使用场景和用例？</strong>",
+          tag: "tip",
+          children: [
+            { text: "所有利益相关者都能理解（描述用户视角的功能需求）", tag: "tip" },
+            { text: "可作为整个开发流程的基础：用户手册、系统设计、实现、测试规格、客户验收测试", tag: "tip" },
+            { text: "是增量与迭代开发的良好基础", tag: "tip" }
+          ]
+        },
+        {
+          text: "<strong>用例文本描述模板 (Use Case Text Description)</strong>",
+          tag: "exam",
+          children: [
+            { text: "<strong>Name</strong>：短小的主动动词短语，如 <code>RegisterForCourses</code>", tag: "def" },
+            { text: "<strong>Goal</strong>：对用例角色和目的的简短描述", tag: "def" },
+            { text: "<strong>Flow of Events</strong>：客户可理解的系统行为文字描述（非实现细节）", tag: "key" },
+            { text: "<strong>Special Requirements</strong>：非功能需求等，需在设计/实现阶段处理", tag: "def" },
+            { text: "<strong>Preconditions</strong>：用例开始时系统的约束条件", tag: "def" },
+            { text: "<strong>Postconditions</strong>：用例结束时系统的约束条件", tag: "def" }
+          ]
+        },
+        {
+          text: "<strong>基本流与备选流 (Basic & Alternate Flows)</strong>",
+          tag: "exam",
+          children: [
+            { text: "<strong>基本流 (Basic Flow)</strong>：描述用例正常执行时发生的事件序列", tag: "def" },
+            { text: "<strong>备选流 (Alternate Flows)</strong>：描述可选或异常情况，可视为基本流的detour（绕行路线）", tag: "def" },
+            { text: "备选流必须说明从基本流的<em>哪一步分叉</em>，以及结束时<em>返回哪里</em>", tag: "tip" }
+          ]
+        },
+        {
+          text: "<strong>示例：RegisterForCourses 基本流</strong>",
+          tag: "eg",
+          children: [
+            { text: "1. Logon：学生访问大学网站，输入学号和密码", tag: "eg" },
+            { text: "2. Select &#39;Create a Schedule&#39;：系统展示可用功能，学生选择&ldquo;创建课表&rdquo;", tag: "eg" },
+            { text: "3. Obtain Course Information：系统从课程目录获取可选课程并展示", tag: "eg" },
+            { text: "4. Select Courses：学生选择4门主选课和2门备选课", tag: "eg" },
+            { text: "5. Submit Schedule：系统验证每门课的先修条件", tag: "eg" },
+            { text: "6. Display Completed Schedule：系统展示最终课表及确认号", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>示例：RegisterForCourses 备选流</strong>",
+          tag: "eg",
+          children: [
+            { text: "备选1：学生身份识别失败 → 步骤1 → 显示错误信息", tag: "eg" },
+            { text: "备选2：学生在任意步骤退出 → 可保存部分课表", tag: "eg" },
+            { text: "备选3：先修条件未满足/课程已满/时间冲突 → 不予注册，返回步骤4重新选课", tag: "eg" },
+            { text: "备选4：课程目录系统不可用 → 步骤3 → 显示提示，用例结束", tag: "eg" },
+            { text: "备选5：注册通道已关闭 → 用例启动时检测，显示提示，用例结束", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>示例：FRIEND 场景 warehouseOnFire</strong>",
+          tag: "eg",
+          children: [
+            { text: "参与者：Bob (FieldOfficer)、James (Dispatcher)", tag: "eg" },
+            { text: "Bob 发现仓库冒烟 → 激活 ReportEmergency 功能，输入详情", tag: "eg" },
+            { text: "James 收到警报 → 使用 OpenIncident 记录事件", tag: "eg" },
+            { text: "James 使用 AllocateResources 分配1支消防队和2支急救队", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>用例写作总结</strong>",
+          tag: "tip",
+          children: [
+            { text: "流程应以系统与参与者之间的<em>对话形式</em>编写", tag: "tip" },
+            { text: "每步说明参与者<em>做什么</em>，系统<em>如何响应</em>", tag: "tip" },
+            { text: "每步必须有<em>编号</em>和<em>标题</em>", tag: "tip" },
+            { text: "备选流需注明从基本流的哪步分叉，以及结束时的去向", tag: "tip" }
+          ]
+        },
+        {
+          text: "<strong>示例：PlanTrip 用例（行程规划）</strong>",
+          tag: "eg",
+          children: [
+            { text: "1. 驾驶员启动电脑，登录行程规划 Web 服务", tag: "eg" },
+            { text: "2. 驾驶员输入目的地序列作为行程约束", tag: "eg" },
+            { text: "3. 规划服务基于地图数据库计算最短路径（含路口和方向列表）", tag: "eg" },
+            { text: "4. 驾驶员可通过增删目的地修改行程", tag: "eg" },
+            { text: "5. 驾驶员将命名行程保存在规划服务数据库中", tag: "eg" }
+          ]
+        },
+        {
+          text: "<strong>示例：ExecuteTrip 用例（行程执行）</strong>",
+          tag: "eg",
+          children: [
+            { text: "1. 驾驶员启动车辆，登录车载路线助手", tag: "eg" },
+            { text: "2. 成功登录后，指定规划服务和行程名称", tag: "eg" },
+            { text: "3. 车载助手从规划服务获取目的地、方向、路段和路口列表", tag: "eg" },
+            { text: "4. 根据当前位置，助手向驾驶员提供下一步指引", tag: "eg" },
+            { text: "5. 驾驶员抵达目的地，关闭路线助手", tag: "eg" }
+          ]
+        }
+      ]
+    },
+    {
+      text: "十二、推荐阅读 (Recommended Reading)",
+      tag: "tip",
+      children: [
+        { text: "<strong>Pressman</strong>：Understanding Requirements > Developing Use Cases；Requirements Modelling > Scenario-Based Modelling；Appendix 1: An Introduction to UML", tag: "tip" },
+        { text: "<strong>Martin Fowler</strong>：UML Distilled — Introduction", tag: "tip" },
+        { text: "<strong>Bruegge & Dutoit</strong>：Object-Oriented Software Engineering (3rd ed.)，Section 2.2.1, 2.3.5, 2.4.1, 4.4", tag: "tip" },
+        { text: "<strong>SWBOK</strong>：Chapter 1, Section 4.2 & 4.3", tag: "tip" }
+      ]
+    }
+  ]
+};
+
+// ---- Render ----
+function makeTag(t) {
+  if (!t) return '';
+  const map = { def:'定义', exam:'考点', eg:'示例', tip:'建议', warn:'警告', key:'关键', uml:'UML' };
+  return `<span class="tag tag-${t}">${map[t]||t}</span>`;
+}
+
+function buildNode(node, level) {
+  const hasChildren = node.children && node.children.length > 0;
+  const isLeaf = !hasChildren;
+  const div = document.createElement('div');
+  div.className = `node level-${level}${isLeaf ? ' leaf' : ''}`;
+
+  const header = document.createElement('div');
+  header.className = 'node-header';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'node-toggle';
+  toggle.textContent = isLeaf ? '•' : '−';
+
+  const text = document.createElement('span');
+  text.className = 'node-text';
+  text.innerHTML = node.text + (node.tag ? makeTag(node.tag) : '');
+
+  header.appendChild(toggle);
+  header.appendChild(text);
+  div.appendChild(header);
+
+  if (hasChildren) {
+    const children = document.createElement('div');
+    children.className = 'node-children';
+    let totalHeight = 0;
+    node.children.forEach(child => {
+      const childNode = buildNode(child, level + 1);
+      children.appendChild(childNode);
+    });
+    div.appendChild(children);
+
+    // Set initial max-height after render
+    requestAnimationFrame(() => {
+      children.style.maxHeight = children.scrollHeight + 'px';
+    });
+
+    header.addEventListener('click', () => {
+      const collapsed = children.classList.toggle('collapsed');
+      toggle.textContent = collapsed ? '+' : '−';
+      if (!collapsed) {
+        children.style.maxHeight = children.scrollHeight + 'px';
+        // propagate upward
+        let parent = div.parentElement;
+        while (parent && parent.classList.contains('node-children')) {
+          parent.style.maxHeight = parent.scrollHeight + 'px';
+          parent = parent.parentElement && parent.parentElement.parentElement;
+        }
+      }
+    });
+  }
+  return div;
+}
+
+function toggleAll(expand) {
+  document.querySelectorAll('.node-children').forEach(el => {
+    if (expand) {
+      el.classList.remove('collapsed');
+      el.style.maxHeight = el.scrollHeight + 'px';
+    } else {
+      el.classList.add('collapsed');
+    }
+  });
+  document.querySelectorAll('.node-toggle').forEach(el => {
+    if (el.textContent !== '•') el.textContent = expand ? '−' : '+';
+  });
+}
+
+function expandLevel(level) {
+  document.querySelectorAll(`.level-${level} > .node-children`).forEach(el => {
+    el.classList.remove('collapsed');
+    el.style.maxHeight = el.scrollHeight + 'px';
+  });
+  document.querySelectorAll(`.level-${level} > .node-header > .node-toggle`).forEach(el => {
+    if (el.textContent !== '•') el.textContent = '−';
+  });
+}
+
+const tree = document.getElementById('tree');
+const root = buildNode(data, 0);
+tree.appendChild(root);
+</script>
+</body>
+</html>
